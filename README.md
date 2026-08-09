@@ -4,8 +4,8 @@ A web-based pickleball equipment marketplace where players can buy and sell
 paddles, balls, bags, shoes, apparel, grips, nets, training equipment, and
 more.
 
-**Current project phase:** Phase 1 — Database Foundation (Phase 0 foundation
-complete).
+**Current project phase:** Phase 1 — Database Foundation complete (Phases 0 and
+1 committed). Next: Phase 2 — Authentication and User Management.
 
 ## Purpose
 
@@ -96,9 +96,12 @@ routes will be added to `src/routes/index.tsx`.
 - Client scaffold: created (`src/lib/supabase/client.ts`); fails loudly if
   env vars are missing.
 - Local configuration: `supabase/config.toml` scaffolded.
+- Database foundation: complete and committed — schema, enums, RLS, storage
+  buckets, and seed data are tracked under `supabase/migrations/` and
+  `supabase/seed.sql`. See `DATABASE.md` and `SECURITY.md`.
 - Live project connection: **BLOCKED** — no Supabase CLI, Docker, project
-  URL, or credentials available. Migrations and seed are tracked and ready to
-  apply once a project can be linked.
+  URL, or credentials available. Migrations and seed are ready to apply once a
+  project can be linked (`supabase db reset`, then `supabase gen types`).
 - Database types: generation deferred until migrations can be applied
   (`supabase gen types`).
 
