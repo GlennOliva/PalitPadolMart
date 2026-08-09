@@ -4,8 +4,8 @@ A web-based pickleball equipment marketplace where players can buy and sell
 paddles, balls, bags, shoes, apparel, grips, nets, training equipment, and
 more.
 
-**Current project phase:** Phase 1 — Database Foundation complete (Phases 0 and
-1 committed). Next: Phase 2 — Authentication and User Management.
+**Current project phase:** Phase 2 — Authentication and User Management
+complete (Phases 0–2 committed). Next: Phase 3 — Seller Onboarding.
 
 ## Purpose
 
@@ -62,34 +62,44 @@ Validation order before declaring a phase complete:
 
 ## Current architecture
 
-Phase 0 established the application shell and Supabase foundation:
+Phase 0 established the application shell and Supabase foundation; Phase 1
+built the database schema; Phase 2 added authentication and user management:
 
 ```
 src/
-├── components/layout/AppLayout.tsx   # header / main / footer shell
+├── components/
+│   ├── auth/                       # AuthCard, PasswordField, ProtectedRoute, GuestRoute
+│   ├── common/                     # FormField, SubmitButton, FormError, Alert, LoadingState, ProfileUnavailable
+│   └── layout/AppLayout.tsx        # header / main / footer shell
+├── features/auth/                  # AuthProvider, useAuth, auth.service, errors, utils, validation, avatar
 ├── pages/
-│   ├── HomePage.tsx                  # root route placeholder
-│   └── NotFoundPage.tsx              # catch-all route
-├── routes/index.tsx                  # createBrowserRouter setup
-├── lib/supabase/client.ts            # Supabase client (env-guarded)
-├── types/                            # generated DB types land in Phase 1+
-└── main.tsx                          # entrypoint wiring the router
+│   ├── auth/                       # LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage
+│   ├── account/                    # ProfilePage, PreferencesPage
+│   ├── HomePage.tsx                # root route
+│   ├── DashboardPage.tsx           # post-login landing
+│   ├── AccountSuspendedPage.tsx    # inactive-account screen
+│   └── NotFoundPage.tsx            # catch-all route
+├── routes/index.tsx                # createBrowserRouter setup + route guards
+├── lib/supabase/client.ts          # Supabase client (typed, env-guarded)
+├── types/database.ts               # generated DB types
+└── main.tsx                        # entrypoint wiring AuthProvider + router
 
 supabase/
-├── config.toml                       # local Supabase scaffold
-├── migrations/                       # SQL migrations (Phase 1)
+├── config.toml                     # local Supabase scaffold
+├── migrations/                     # SQL migrations (Phase 1/2)
 ├── functions/
-└── seed.sql                          # seed data (Phase 1)
+└── seed.sql                        # seed data
 
 tests/
-├── unit/                             # unit tests (e.g. smoke.test.tsx)
+├── unit/                           # unit/integration tests (smoke + auth suite)
 ├── integration/
 └── e2e/
 ```
 
 Routing uses React Router with a layout route (`AppLayout`) and nested
-`HomePage` / `NotFoundPage` routes. Future marketplace, seller, and admin
-routes will be added to `src/routes/index.tsx`.
+`HomePage` / `NotFoundPage` routes. Auth routes are wrapped in `GuestRoute`;
+protected account routes in `ProtectedRoute`. See `AUTHENTICATION.md` for the
+auth flow details and required Supabase Auth dashboard configuration.
 
 ## Supabase setup status
 
@@ -99,15 +109,18 @@ routes will be added to `src/routes/index.tsx`.
 - Database foundation: complete and committed — schema, enums, RLS, storage
   buckets, and seed data are tracked under `supabase/migrations/` and
   `supabase/seed.sql`. See `DATABASE.md` and `SECURITY.md`.
-- Live project connection: **BLOCKED** — no Supabase CLI, Docker, project
-  URL, or credentials available. Migrations and seed are ready to apply once a
-  project can be linked (`supabase db reset`, then `supabase gen types`).
-- Database types: generation deferred until migrations can be applied
-  (`supabase gen types`).
+- Live project: **connected** — linked to the hosted "PalitPaddleBai" project
+  (ref `mygnxlhimbrmjwtrffbh`); both migrations applied remotely.
+- Database types: generated from the live project
+  (`supabase gen types typescript --linked`) into `src/types/database.ts`.
+- `.env.local` holds the real `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+  (gitignored — never commit).
 
 ## Known blockers
 
-- No Supabase credentials / project reference — live connection, migration
-  application, and type generation cannot be verified locally.
-- Supabase CLI and Docker not installed — required to run `supabase db
-  reset`, apply migrations, and run a local stack.
+- Supabase Auth dashboard configuration (Site URL, Redirect URLs, email
+  confirmation, auth email templates) must be set manually in the Supabase
+  dashboard.
+- Password-recovery / confirmation email delivery and live end-to-end auth
+  flows require a running UI and a real user; they are not verifiable from the
+  command line here.

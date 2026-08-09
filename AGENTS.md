@@ -21,7 +21,7 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
 ## Setup / env
 - Copy `.env.example` to `.env.local` with `VITE_SUPABASE_URL=` and `VITE_SUPABASE_ANON_KEY=`; never commit real keys. `.env*` files are gitignored (`.env.example` stays tracked).
 - The Supabase client (`src/lib/supabase/client.ts`) throws at import time when env vars are missing — that is intentional.
-- No Supabase CLI/Docker/credentials are available in this environment: a live connection, migration application, and `supabase gen types` are BLOCKED until provided. Do not fabricate a connected state.
+- The Supabase CLI is available and logged in; the project is linked (see Current state). Use `npx supabase db push` for new migrations and `npx supabase gen types typescript --linked` to refresh types. No Docker is available, so local-stack commands (`supabase db reset --local`) must not be used.
 
 ## Structure (per spec)
 - `src/features/<domain>/`, `src/components/{common,layout,...}`, `src/lib/supabase`, `src/pages`, `src/routes`, `src/services`, `src/types`, `src/utils`, `src/hooks`
@@ -30,11 +30,20 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
 - `src/routes/index.tsx` is the single router entrypoint; add new routes there.
 
 ## Current state
-- Phase 0 (project initialization/foundation) and Phase 1 (database foundation) are complete and committed. **Phase 2 — Authentication and User Management is next.**
+- Phase 0 (project initialization/foundation), Phase 1 (database foundation), and
+  Phase 2 (authentication and user management) are complete and committed.
+  **Phase 3 — Seller Onboarding is next.**
+- A hosted Supabase project is linked (ref `mygnxlhimbrmjwtrffbh`, name
+  "PalitPaddleBai"); both Phase 1 migrations are applied remotely; types are
+  generated into `src/types/database.ts` via `npx supabase gen types
+  typescript --linked` (never hand-edit the generated file).
+- `.env.local` (gitignored) holds the real `VITE_SUPABASE_URL` and
+  `VITE_SUPABASE_ANON_KEY`. The service-role key is not in the repo and must
+  never be written into frontend vars.
 - `tsconfig.app.json` has `strict: true` and includes `tests/`.
 - `verbatimModuleSyntax` is on: type-only imports must use `import type`. `erasableSyntaxOnly` forbids TS `enum`/namespace/parameter-property constructs — model Postgres enums as union types in TS.
 - Postgres enums are lowercase (e.g. `listing_status`); RLS uses `security definer` helpers `public.is_admin()` and `public.auth_seller_id()`. Column-level grants prevent self-service role/status escalation.
-- `git`: repo initialized; Phase 0 and Phase 1 commits exist. No pushing to a remote unless authorized.
+- `git`: repo initialized; Phase 0–2 commits exist. No pushing to a remote unless authorized.
 
 ## Rules
 - Plan the next incomplete phase before implementing; identify files, migrations, RLS policies, tests, risks, and completion criteria.

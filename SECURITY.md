@@ -49,11 +49,30 @@ a JWT can claim) or on client-supplied values.
   that re-check `is_admin()`.
 - `is_admin()` is security-definer and only returns a boolean.
 
+## Authentication flows (Phase 2)
+
+- Session state is owned by `AuthProvider` (`src/features/auth/`); guests are
+  kept out of account routes by `ProtectedRoute`, signed-in users are kept out
+  of guest routes by `GuestRoute`.
+- Sign-in/post-login redirects go through `resolveReturnPath()`, which only
+  accepts safe internal paths — a crafted `from` value cannot cause an
+  open redirect.
+- `profiles` is never inserted by clients (no insert policy); rows are created
+  by the `handle_new_user()` auth trigger. A missing profile shows an
+  actionable error rather than allowing self-insert.
+- `suspended`/`deactivated` accounts are blocked at the route level and cannot
+  reach account pages; authorization is still enforced server-side by RLS.
+- Password recovery uses `resetPasswordForEmail` with a `redirectTo` of the
+  app's `/reset-password` route; the recovery flag is cleared after a
+  successful password change.
+
 ## Storage security
 
 Buckets and object policies in `20260809000001_create_storage_foundation.sql`:
 
 - `avatars` (private) — only `avatars/{user_id}/...` owned by the caller.
+  Displayed via short-lived signed URLs; the browser never holds a public URL
+  for a private object.
 - `marketplace-products` (public read) — writes restricted to paths under the
   caller's `seller_id`; no open write policy.
 - `dispute-evidence` (private) — only the owner and admins.
@@ -64,13 +83,16 @@ Buckets and object policies in `20260809000001_create_storage_foundation.sql`:
   code. Never place the service-role key, database password, or third-party
   secrets in `VITE_*` variables.
 - `.env` / `.env.*` are gitignored; `.env.example` is tracked with placeholders
-  only.
-- No real credentials exist in this environment; a live connection is BLOCKED.
+  only. The live anon key lives only in the local, untracked `.env.local`.
+- The Supabase service-role key is used **only** for admin/CLI operations and
+  must never be written into the repo or frontend environment.
 
 ## Known limitations
 
 - Order status transitions are not yet gated by a state machine (Phase 8).
 - Review eligibility and dispute resolution workflows are Phase 10/11.
-- Migrations and storage setup could not be applied/verified locally (no
-  Supabase CLI/Docker/project) — application must be followed by a live
-  security verification pass.
+- Auth email delivery and Supabase Auth dashboard settings (Site URL, Redirect
+  URLs, email confirmation) must be verified manually against the live
+  project; RLS and storage policies were reviewed statically and applied
+  remotely, but a full live security pass (each role exercising each table)
+  is still recommended.

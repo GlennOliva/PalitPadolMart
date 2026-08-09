@@ -12,11 +12,13 @@ All money is stored as `numeric(12,2)` (no floating point). All timestamps are
 ## Migration workflow
 
 - Migrations live in `supabase/migrations/<timestamp>_<name>.sql`, applied in
-  filename order by `supabase db reset` / `supabase migration up`.
-- The Supabase CLI is required to apply them; it is not available in this
-  environment yet (BLOCKED).
-- After migrations apply, regenerate client types with
-  `supabase gen types typescript --project-id <id> > src/lib/supabase/database.types.ts`.
+  filename order by `supabase db push` (remote) / `supabase db reset` (local).
+- The Supabase CLI is available and linked to the hosted "PalitPaddleBai"
+  project (ref `mygnxlhimbrmjwtrffbh`); both Phase 1 migrations have been
+  applied remotely.
+- Regenerate client types with
+  `supabase gen types typescript --linked > src/types/database.ts`. The
+  generated file is committed and must not be hand-edited.
 - Seed data lives in `supabase/seed.sql` and applies automatically on
   `supabase db reset`. It contains only safe reference data (categories,
   brands). Sample listings require authenticated sellers, so they are not
@@ -136,7 +138,6 @@ write), `dispute-evidence` (private). Object paths are owner-scoped
 
 ## Known limitation
 
-Migrations cannot be applied in this environment (no Supabase CLI/Docker and
-no live project). The SQL is tracked and intended to apply cleanly via
-`supabase db reset`; live verification is BLOCKED until tooling/credentials
-are provided.
+Migrations have been applied to the hosted project and types generated, but a
+full live data-integrity pass (each RLS policy exercised per role) is still
+recommended before Phase 3 builds on top of the schema.
