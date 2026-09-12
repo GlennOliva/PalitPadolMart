@@ -3,12 +3,21 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './routes'
 import { AuthProvider } from './features/auth/AuthProvider'
+import { SellerProvider } from './features/seller/SellerProvider'
+import { FavoritesProvider } from './features/favorites/FavoritesProvider'
+import { CartProvider } from './features/cart/CartProvider'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <SellerProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <RouterProvider router={router} />
+          </CartProvider>
+        </FavoritesProvider>
+      </SellerProvider>
     </AuthProvider>
   </StrictMode>,
 )

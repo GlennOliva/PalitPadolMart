@@ -3,6 +3,7 @@ interface SubmitButtonProps {
   loading?: boolean
   loadingLabel?: string
   disabled?: boolean
+  onClick?: () => void
 }
 
 export default function SubmitButton({
@@ -10,6 +11,7 @@ export default function SubmitButton({
   loading = false,
   loadingLabel = 'Please wait…',
   disabled = false,
+  onClick,
 }: SubmitButtonProps) {
   return (
     <button
@@ -17,6 +19,7 @@ export default function SubmitButton({
       className="btn btn--primary btn--block"
       disabled={disabled || loading}
       aria-busy={loading}
+      onClick={onClick}
     >
       <span className="btn__label">
         {loading ? (

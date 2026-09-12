@@ -4,6 +4,7 @@ interface FormFieldProps {
   value: string
   onChange: (value: string) => void
   type?: 'text' | 'email' | 'tel'
+  inputMode?: 'text' | 'decimal' | 'numeric'
   autoComplete?: string
   placeholder?: string
   error?: string | null
@@ -11,6 +12,7 @@ interface FormFieldProps {
   required?: boolean
   maxLength?: number
   disabled?: boolean
+  className?: string
 }
 
 export default function FormField({
@@ -19,6 +21,7 @@ export default function FormField({
   value,
   onChange,
   type = 'text',
+  inputMode,
   autoComplete,
   placeholder,
   error,
@@ -26,6 +29,7 @@ export default function FormField({
   required = false,
   maxLength,
   disabled = false,
+  className = '',
 }: FormFieldProps) {
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
@@ -34,7 +38,7 @@ export default function FormField({
     .join(' ') || undefined
 
   return (
-    <div className="form-field">
+    <div className={`form-field ${className}`.trim()}>
       <label className="form-field__label" htmlFor={id}>
         {label}
         {required ? <span className="form-field__required"> *</span> : null}
@@ -46,6 +50,7 @@ export default function FormField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}
