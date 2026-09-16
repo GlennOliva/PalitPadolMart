@@ -5,7 +5,6 @@ import {
   SELLER_LOGO_BUCKET,
   type PublicSellerProfile,
   type SellerApplicationInput,
-  type SellerDashboardSummary,
   type SellerEditableFields,
   type SellerProfile,
 } from './seller.types'
@@ -121,85 +120,6 @@ export function getPublicLogoUrl(logoPath: string | null): string | null {
   if (logoPath == null) return null
   const { data } = supabase.storage.from(SELLER_LOGO_BUCKET).getPublicUrl(logoPath)
   return data.publicUrl
-}
-
-const COUNT = { count: 'exact', head: true } as const
-
-/**
- * Real numbers from the database (server-side counts) — no faked metrics.
- * Orders in `paid`/`completed` states count toward sales value; everything
- * else is either not yet transacted or cancelled/disputed.
- */
-export async function getSellerDashboardSummary(
-  sellerId: string,
-): Promise<{ data: SellerDashboardSummary | null; error: PostgrestError | null }> {
-  const [active, draft, sold, pendingOrders, completedOrders, revenue, reviews] =
-    await Promise.all([
-      supabase
-        .from('listings')
-        .select('*', COUNT)
-        .eq('seller_id', sellerId)
-        .eq('listing_status', 'active'),
-      supabase
-        .from('listings')
-        .select('*', COUNT)
-        .eq('seller_id', sellerId)
-        .eq('listing_status', 'draft'),
-      supabase
-        .from('listings')
-        .select('*', COUNT)
-        .eq('seller_id', sellerId)
-        .eq('listing_status', 'sold'),
-      supabase
-        .from('orders')
-        .select('*', COUNT)
-        .eq('seller_id', sellerId)
-        .eq('status', 'pending'),
-      supabase
-        .from('orders')
-        .select('*', COUNT)
-        .eq('seller_id', sellerId)
-        .eq('status', 'completed'),
-      supabase
-        .from('orders')
-        .select('total')
-        .eq('seller_id', sellerId)
-        .in('status', ['paid', 'completed']),
-      supabase
-        .from('reviews')
-        .select('rating, seller_rating')
-        .eq('seller_id', sellerId)
-        .eq('status', 'approved'),
-    ])
-
-  const firstError = [active, draft, sold, pendingOrders, completedOrders, revenue, reviews]
-    .map((result) => result.error)
-    .find((error) => error != null)
-
-  if (firstError != null) {
-    return { data: null, error: firstError }
-  }
-
-  const approved = reviews.data ?? []
-  const averageRating =
-    approved.length > 0
-      ? approved.reduce((sum, review) => sum + (review.seller_rating ?? review.rating), 0) /
-        approved.length
-      : null
-
-  return {
-    data: {
-      activeListings: active.count ?? 0,
-      draftListings: draft.count ?? 0,
-      soldListings: sold.count ?? 0,
-      pendingOrders: pendingOrders.count ?? 0,
-      completedOrders: completedOrders.count ?? 0,
-      completedSalesValue: (revenue.data ?? []).reduce((sum, order) => sum + order.total, 0),
-      approvedReviews: approved.length,
-      averageRating,
-    },
-    error: null,
-  }
 }
 
 export interface PublicSellerResult {

@@ -9,10 +9,10 @@ It never uses the service-role key, creates Auth users, or weakens RLS.
 Automated status: **ALL PASS** on 2026-09-13 against project
 `mygnxlhimbrmjwtrffbh`.
 
-Overall Phase 11 status: **PARTIAL**. The migration, application, automated
+Overall Phase 11 status: **COMPLETE**. The migration, application, automated
 tests, hosted verifier, earlier-phase hosted regressions, typecheck, and build
-all pass. The manual browser acceptance journey remains pending, so Phase 11
-must not be represented as fully accepted yet.
+all pass. The user manually accepted the remaining browser journey on
+2026-09-14.
 
 ## Credentials
 
@@ -138,9 +138,9 @@ orders, their listings, report/dispute/refund history, and registered evidence
 are intentionally retained because the production model has no participant
 hard-delete path for transaction or moderation history.
 
-## Manual Acceptance Pending
+## Manual Acceptance
 
-Before changing the overall status to `PASS`, verify in a real browser:
+The user accepted the following real-browser journey on 2026-09-14:
 
 1. A buyer reports a listing, opens a dispute from an eligible order, sends a
    message, and uploads each supported evidence type.
@@ -157,5 +157,4 @@ Before changing the overall status to `PASS`, verify in a real browser:
 
 - Never commit real credentials or a service-role key.
 - Never disable email confirmation or RLS to make verification pass.
-- Do not begin Phase 12 until Phase 11 manual acceptance is completed or the
-  user explicitly accepts the remaining limitation.
+- Phase 11 is complete. Retain these checks in future regression acceptance.

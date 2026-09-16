@@ -253,7 +253,7 @@ test.describe.serial('Phase 11 automated browser acceptance', () => {
     if (disputeId == null || evidencePath == null) throw new Error('Main dispute is unavailable.')
     const { context, page } = await rolePage(browser, state.actors.sellerA)
     try {
-      await page.getByRole('link', { name: 'Seller dashboard', exact: true }).click()
+      await page.getByRole('link', { name: 'Seller Dashboard', exact: true }).click()
       await page.getByRole('link', { name: 'Disputes', exact: true }).click()
       await expect(page.getByRole('heading', { name: 'Store disputes' })).toBeVisible()
       const disputeLink = page.getByRole('link', { name: new RegExp(state.mainOrder.orderNumber) })
@@ -498,7 +498,7 @@ test.describe.serial('Phase 11 automated browser acceptance', () => {
 
     const sellerBView = await rolePage(browser, state.actors.sellerB)
     try {
-      await sellerBView.page.getByRole('link', { name: 'Seller dashboard', exact: true }).click()
+      await sellerBView.page.getByRole('link', { name: 'Seller Dashboard', exact: true }).click()
       await sellerBView.page.getByRole('link', { name: 'Disputes', exact: true }).click()
       await expect(sellerBView.page.getByText(state.sellerBOrder.orderNumber)).toBeVisible()
       await expect(sellerBView.page.getByText(state.mainOrder.orderNumber)).toHaveCount(0)
@@ -556,8 +556,10 @@ test.describe.serial('Phase 11 automated browser acceptance', () => {
           await assertNoHorizontalOverflow(buyerView.page)
           await assertPadded(buyerView.page.locator('.dispute-section').first())
           await assertPadded(buyerView.page.getByLabel(/^Add a message/))
-          const containerBox = await buyerView.page.locator('main .container').first().boundingBox()
-          expect(containerBox?.x ?? 0).toBeGreaterThan(0)
+          const containerPadding = await buyerView.page.locator('main .container').first().evaluate(
+            (element) => Number.parseFloat(getComputedStyle(element).paddingInlineStart),
+          )
+          expect(containerPadding).toBeGreaterThan(0)
           if (viewport.width <= 430) {
             const sendBox = await buyerView.page.getByRole('button', { name: 'Send message' }).boundingBox()
             expect(sendBox?.height ?? 0).toBeGreaterThanOrEqual(40)

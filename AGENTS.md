@@ -16,13 +16,15 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
 - `npm run lint` — **oxlint**, not ESLint (config: `.oxlintrc.json`)
 - `npm run typecheck` — `tsc -b`
 - `npm run test` — Vitest single run (jsdom + React Testing Library); `npm run test:watch` for watch mode
-- Playwright `test:e2e` is not wired yet. Run `lint → typecheck → test → build` (plus `test:e2e` once E2E exists) before declaring a phase complete; never report PASS when any fail.
+- Phase 11-12 Playwright acceptance is wired through `npm run test:e2e`. Run
+  `lint → typecheck → test → build` plus `test:e2e` before declaring a phase
+  complete; never report PASS when any fail.
 
 ## Setup / env
 - Copy `.env.example` to `.env.local` with `VITE_SUPABASE_URL=` and `VITE_SUPABASE_ANON_KEY=`; never commit real keys. `.env*` files are gitignored (`.env.example` stays tracked).
 - The Supabase client (`src/lib/supabase/client.ts`) throws at import time when env vars are missing — that is intentional.
 - The Supabase CLI is available and logged in; the project is linked (see Current state). Use `npx supabase db push` for new migrations and `npx supabase gen types typescript --linked` to refresh types. No Docker is available, so local-stack commands (`supabase db reset --local`) must not be used.
-- Hosted Phase 7 verification (`verify-phase7.mjs`) requires three reusable, confirmed test accounts configured via local `PHASE7_TEST_{SELLER,BUYER,STRANGER}_{EMAIL,PASSWORD}` vars (placeholders in `.env.example`). The script never signs users up and never creates Auth users; if credentials are missing it SKIPs. See `PHASE7_VERIFICATION.md`.
+- Hosted Phase 7 verification (`verify-phase7.mjs`) requires three reusable, confirmed test accounts configured via local `PHASE7_TEST_{SELLER,BUYER,STRANGER}_{EMAIL,PASSWORD}` vars (placeholders in `.env.example`). The script never signs users up and never creates Auth users; if credentials are missing it SKIPs. See `PHASE7_VERIFICATION.md`. Its favorite-snapshot check is scoped by the run listing and its cleanup soft-archives (marketplace never hard-deletes listings); do not regress those fixes.
 
 ## Structure (per spec)
 - `src/features/<domain>/`, `src/components/{common,layout,...}`, `src/lib/supabase`, `src/pages`, `src/routes`, `src/services`, `src/types`, `src/utils`, `src/hooks`
@@ -51,14 +53,45 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
   Phase 4 (marketplace catalog), Phase 5 (search and discovery), Phase 6
   (paddle recommendations), Phase 7 (favorites and inquiries), Phase 8
   (orders + cart + multi-seller checkout), Phase 9 (payment status and
-  fulfillment), and Phase 10 (ratings & reviews) are **COMPLETE**. Phase 11
-  (complaints, disputes & refunds) is implemented and all automated/local/
-  hosted Phase 7–11 checks pass, but manual browser acceptance remains pending,
-  so its status is **PARTIAL**. Phases 0–4 are committed or staged as
-  uncommitted working changes. Do not begin Phase 12 until Phase 11 is accepted
-  and the user explicitly instructs it.
+  fulfillment), Phase 10 (ratings & reviews), Phase 11 (complaints, disputes &
+  refunds), and Phase 12 (notifications + Google OAuth) are **COMPLETE**. The
+  user manually accepted the Phase 11 browser journey and Phase 12 production
+  deployment/Google OAuth journey on 2026-09-14. Phase 13 (administration) is
+  current: database foundation, 51 admin RPCs, the admin shell, all 12 admin
+  resource workspaces, services, unit tests, documentation
+  (`ADMINISTRATION.md`, `PHASE13_VERIFICATION.md`), `verify-phase13.mjs`, and
+  the Phase 13 Playwright suite are implemented; local validation passes.
+  Hosted Phase 13 is **PARTIAL** until the `PHASE13_TEST_ADMIN_*` credential is
+  corrected (currently `invalid_credentials`).
+- Phase 14 (reporting, analytics & business insights) is also implemented:
+  analytics migration + one hosted fix migration, admin (`/admin/analytics`)
+  and seller (`/seller/analytics`) dashboards with date-range/bucket filters,
+  previous-period compare, paginated ranking tables, CSV export, shared
+  formatting/params/services in `src/features/{admin,seller}/analytics/` +
+  `src/utils/{analytics-format,csv}.ts`, unit tests, `ANALYTICS.md`,
+  `PHASE14_VERIFICATION.md`, `verify-phase14.mjs` (seller checks ALL PASS;
+  five marketplace-positive checks SKIP on the admin credential blocker), and
+  the Phase 14 Playwright suite (6 PASS / 2 SKIP).
+- Phase 15 (UI/UX hardening — admin data visualization + report printing) is
+  also implemented with **no database migrations**: a rewritten `/admin`
+  executive dashboard (16 KPI cards with previous-period deltas, URL
+  date-range + auto bucket, TanStack React Charts line/bar visualizations,
+  all-time status distributions, operational queues, `Print Executive Report`),
+  the `/admin/analytics` page rerendered on the same chart layer with a
+  "Status & moderation" section and `Print Report`, a new `/admin/report-center`
+  directory with `Print Report Directory`, shared report/chart primitives in
+  `src/components/{reports,analytics}/`, print-only/print-safe CSS in
+  `src/index.css` (`@media print` + `@page A4`), unit tests,
+  `PHASE15_VERIFICATION.md`, `verify-phase15.mjs` (seller/public checks ALL
+  PASS; admin-positive checks SKIP), and the Phase 15 Playwright suite
+  (3 PASS / 3 SKIP, including the always-on public responsive matrix at
+  375-1440px with overflow/console-error/raw-SQL guards). Dependencies added:
+  `@tanstack/charts@0.18.0` + `@tanstack/react-charts@0.18.0` (hoisted top-level).
+  Do not begin a subsequent phase until the admin test credential is corrected
+  and the Phase 13/14/15 admin-hosted checks PASS; the current phase remains
+  **Phase 15** until then.
 - A hosted Supabase project is linked (ref `mygnxlhimbrmjwtrffbh`, name
-  "PalitPaddleBai"); Phases 1, 4, 5, 6, 7, 8, 9, 10, and 11 migrations are applied
+  "PalitPaddleBai"); tracked migrations through Phase 14 are applied
   remotely; types are generated into `src/types/database.ts` via `npx supabase
   gen types typescript --linked` (never hand-edit the generated file).
 - `.env.local` (gitignored) holds the real `VITE_SUPABASE_URL` and
@@ -86,9 +119,9 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
   unset preferences are neutral; budget zeroes at 2×). Page:
   `src/pages/recommendations/RecommendationsPage.tsx` with a no-candidates and
   a no-budget-match empty state. See `PADDLE_RECOMMENDATIONS.md`.
-- `git`: repo initialized; Phase 0–2 commits exist. Phase 3–6 work is staged
-  or unstaged as uncommitted changes (Phase 5/6 migrations applied remotely).
-  No pushing to a remote unless authorized.
+- `git`: repo initialized; earlier phase commits exist and later phase work is
+  staged or unstaged as uncommitted changes. No pushing to a remote unless
+  authorized.
 - Phase 8 hosted verification: `verify-phase8.mjs` covers the order/transaction
   system AND the cart + multi-seller checkout (RLS, add/update/checkout, error
   codes, concurrency). It requires the confirmed Phase 7 accounts plus
@@ -106,9 +139,7 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
   journey checklist in `PHASE9_MANUAL_TESTING.md`. Payment-proof upload errors
   are always mapped to safe copy — raw Storage/RLS database messages are never
   surfaced to the UI (`uploadPaymentProof` in
-  `src/features/orders/payments.service.ts`). All four hosted verifiers
-  pass sequentially (`node verify-phase7.mjs && node verify-phase8.mjs &&
-  node verify-phase9.mjs && node verify-phase10.mjs`); run them one at a time
+  `src/features/orders/payments.service.ts`). Run hosted verifiers one at a time
   because they share accounts.
 - Phase 10 hosted verification: `verify-phase10.mjs` covers verified-purchase
   reviews end-to-end: two completed orders driven through the real Phase 8/9
@@ -145,6 +176,31 @@ PalitPaddleBai Mart — a Supabase-first pickleball equipment marketplace (React
   direct UPDATE/DELETE/reassign against `reviews` matches zero rows via
   admin-only RLS. Migration
   `20260911000000_phase10_seller_review_visibility.sql` is applied remotely.
+- Phase 12 notifications: migration
+  `20260913000000_phase12_notifications_google_oauth.sql` is applied remotely.
+  Private trigger functions derive recipient/event/actor/target data from
+  trusted inquiry/order/payment/review/report/dispute/seller rows. Browser
+  execution of `notify_user` and `emit_marketplace_notification` is revoked;
+  RLS permits recipient-only SELECT, and read state changes use
+  `mark_notification_read` / `mark_all_notifications_read`. Deliveries dedupe
+  on `(recipient_id, event_key)` and are in the Supabase Realtime publication.
+  Frontend code lives under `src/features/notifications/`,
+  `src/components/notifications/`, and `/notifications`. See
+  `NOTIFICATIONS.md` and `PHASE12_VERIFICATION.md`.
+- Google OAuth augments password auth through Supabase. `/auth/callback`
+  validates internal return paths, maps provider errors to safe copy, handles
+  blocked accounts, and never receives provider secrets. The hosted provider
+  redirects to Google, but production consent/callback/profile/account-linking
+  remains manual. Required Google callback:
+  `https://mygnxlhimbrmjwtrffbh.supabase.co/auth/v1/callback`. See
+  `AUTHENTICATION.md` and `DEPLOYMENT.md`.
+- Phase 12 hosted verification (`verify-phase12.mjs`) covers event targeting,
+  deduplication, failed-transition non-emission, owner RLS, read RPCs, and
+  multi-seller isolation. `PHASE12_TEST_ADMIN_*` is optional; without it the
+  positive admin report-recipient and seller-status checks explicitly SKIP.
+  Phase 11-12 Playwright acceptance is wired through `npm run test:e2e`.
+- Phase 12 production deployment and Google OAuth were manually accepted by the
+  user on 2026-09-14. Do not reclassify Phase 12 as partial.
 - The home hero heading is "Buy. Sell. Play Better." and the not-found page
   links read "Return home" / "Browse the marketplace"; `tests/unit/smoke.test.tsx`
   asserts that copy. The route root uses `ApplicationErrorPage` as its

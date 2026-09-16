@@ -109,12 +109,15 @@ async function signIn(role, email, password) {
 async function cleanupListing(sellerC, listingId) {
   if (listingId == null || sellerC == null) return
   try {
-    const { error } = await sellerC.from('listings').delete().eq('id', listingId)
+    // Soft-archive: the marketplace never hard-deletes listings (RLS forbids
+    // DELETE on listings), so cleanup archives the run listing via the normal
+    // seller update the way Phase 9+ verifiers do.
+    const { error } = await sellerC.from('listings').update({ listing_status: 'archived' }).eq('id', listingId)
     if (error != null) {
-      console.error(`  cleanup: could not delete test listing ${listingId}: ${error.message}`)
+      console.error(`  cleanup: could not archive test listing ${listingId}: ${error.message}`)
     }
   } catch (err) {
-    console.error(`  cleanup: listing delete failed: ${err.message}`)
+    console.error(`  cleanup: listing archive failed: ${err.message}`)
   }
 }
 
@@ -206,6 +209,7 @@ async function main() {
       .from('favorites')
       .select('listing_id, listing_title')
       .eq('user_id', buyer.user.id)
+      .eq('listing_id', listingId)
       .single()
     check('favorite snapshots listing_title', favRow?.listing_title === listing.title, toText(favRow))
 

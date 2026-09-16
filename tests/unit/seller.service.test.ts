@@ -4,7 +4,6 @@ import {
   getMySellerProfile,
   getPublicLogoUrl,
   getPublicSellerProfile,
-  getSellerDashboardSummary,
   removeSellerLogo,
   updateMySellerProfile,
   uploadSellerLogo,
@@ -68,10 +67,6 @@ function makeQuery(table: string) {
 
 function resolveData(data: unknown) {
   return { data, error: null }
-}
-
-function resolveError(message: string) {
-  return { data: null, error: { message } }
 }
 
 beforeEach(() => {
@@ -237,64 +232,6 @@ describe('seller.service', () => {
         'https://example.com/public/seller-1/logo/logo.png',
       )
       expect(getPublicLogoUrl(null)).toBeNull()
-    })
-  })
-
-  describe('getSellerDashboardSummary', () => {
-    it('returns zeroed counts and no rating when nothing exists yet', async () => {
-      sellerMocks.resolve.mockReturnValue({ data: [], error: null })
-
-      const result = await getSellerDashboardSummary('seller-1')
-
-      expect(result.error).toBeNull()
-      expect(result.data).toEqual({
-        activeListings: 0,
-        draftListings: 0,
-        soldListings: 0,
-        pendingOrders: 0,
-        completedOrders: 0,
-        completedSalesValue: 0,
-        approvedReviews: 0,
-        averageRating: null,
-      })
-    })
-
-    it('returns a single error when any query fails', async () => {
-      sellerMocks.resolve.mockImplementation((_table: string, calls: Call[]) => {
-        if (calls.some((call) => call.method === 'select' && call.args[0] === 'total')) {
-          return resolveError('orders exploded')
-        }
-        return resolveData([])
-      })
-
-      const result = await getSellerDashboardSummary('seller-1')
-      expect(result.data).toBeNull()
-      expect(result.error?.message).toBe('orders exploded')
-    })
-
-    it('aggregates revenue and average rating from real rows', async () => {
-      sellerMocks.resolve.mockImplementation((table: string, calls: Call[]) => {
-        if (table === 'orders' && calls.some((call) => call.method === 'select' && call.args[0] === 'total')) {
-          return resolveData([{ total: 100 }, { total: 50 }])
-        }
-        if (table === 'reviews') {
-          return resolveData([{ rating: 5 }, { rating: 4 }])
-        }
-        if (table === 'listings') {
-          const status = calls.find((call) => call.method === 'eq' && call.args[0] === 'listing_status')?.args[1]
-          const count = status === 'active' ? 3 : status === 'sold' ? 1 : 0
-          return { data: null, error: null, count }
-        }
-        return { data: null, error: null, count: 0 }
-      })
-
-      const result = await getSellerDashboardSummary('seller-1')
-
-      expect(result.data?.activeListings).toBe(3)
-      expect(result.data?.soldListings).toBe(1)
-      expect(result.data?.completedSalesValue).toBe(150)
-      expect(result.data?.approvedReviews).toBe(2)
-      expect(result.data?.averageRating).toBe(4.5)
     })
   })
 

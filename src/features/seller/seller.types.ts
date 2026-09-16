@@ -25,17 +25,6 @@ export interface SellerEditableFields {
 
 export type SellerApplicationInput = SellerEditableFields
 
-export interface SellerDashboardSummary {
-  activeListings: number
-  draftListings: number
-  soldListings: number
-  pendingOrders: number
-  completedOrders: number
-  completedSalesValue: number
-  approvedReviews: number
-  averageRating: number | null
-}
-
 /**
  * Public-facing subset of a seller profile, mirroring the
  * `public_seller_profiles` view (active sellers only, no internal columns).

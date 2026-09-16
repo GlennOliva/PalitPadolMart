@@ -6,6 +6,7 @@ import { AuthProvider } from './features/auth/AuthProvider'
 import { SellerProvider } from './features/seller/SellerProvider'
 import { FavoritesProvider } from './features/favorites/FavoritesProvider'
 import { CartProvider } from './features/cart/CartProvider'
+import { NotificationsProvider } from './features/notifications/NotificationsProvider'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')!).render(
       <SellerProvider>
         <FavoritesProvider>
           <CartProvider>
-            <RouterProvider router={router} />
+            <NotificationsProvider>
+              <RouterProvider router={router} />
+            </NotificationsProvider>
           </CartProvider>
         </FavoritesProvider>
       </SellerProvider>

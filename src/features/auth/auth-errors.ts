@@ -29,6 +29,17 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
     'Too many requests. Please wait a moment before trying again.',
   over_request_rate_limit:
     'Too many requests. Please wait a moment before trying again.',
+  access_denied: 'Google sign-in was cancelled. You can try again when you are ready.',
+  provider_disabled:
+    'Google sign-in is not available right now. Use email and password or try again later.',
+  validation_failed:
+    'Google sign-in could not be verified. Please start the sign-in process again.',
+  bad_oauth_state:
+    'Google sign-in could not be verified. Please start the sign-in process again.',
+  flow_state_expired:
+    'Google sign-in took too long. Please start the sign-in process again.',
+  identity_already_exists:
+    'This Google identity is already connected to another account.',
 }
 
 const FALLBACK_AUTH_ERROR =

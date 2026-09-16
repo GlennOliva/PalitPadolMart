@@ -8,6 +8,7 @@ import type {
 } from './auth.types'
 import { buildAvatarPath } from './avatar'
 import { AVATAR_BUCKET } from './auth.types'
+import { resolveReturnPath } from './auth-utils'
 
 const PROFILES_SELECT = '*'
 
@@ -29,6 +30,19 @@ export async function signInWithPassword(email: string, password: string) {
   return supabase.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password,
+  })
+}
+
+export function signInWithGoogle(returnPath?: unknown) {
+  const callbackUrl = new URL('/auth/callback', window.location.origin)
+  callbackUrl.searchParams.set('next', resolveReturnPath(returnPath))
+
+  return supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: callbackUrl.toString(),
+      scopes: 'openid email profile',
+    },
   })
 }
 

@@ -324,8 +324,8 @@ export default function ReviewOrderPage() {
               </div>
             </dl>
             <p className="review-order__summary-note">
-              No fees are added yet. Payment and fulfillment details arrive in a
-              later phase.
+              No platform fees are added. Payment is settled with the seller at
+              pickup, at delivery, or via manual transfer.
             </p>
           </GlassPanel>
         </aside>

@@ -48,6 +48,9 @@ export type Database = {
           entity_id: string | null
           entity_type: string
           id: string
+          new_data: Json | null
+          previous_data: Json | null
+          reason: string | null
         }
         Insert: {
           action_type: string
@@ -57,6 +60,9 @@ export type Database = {
           entity_id?: string | null
           entity_type: string
           id?: string
+          new_data?: Json | null
+          previous_data?: Json | null
+          reason?: string | null
         }
         Update: {
           action_type?: string
@@ -66,6 +72,9 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string
           id?: string
+          new_data?: Json | null
+          previous_data?: Json | null
+          reason?: string | null
         }
         Relationships: []
       }
@@ -836,7 +845,10 @@ export type Database = {
       }
       notifications: {
         Row: {
+          actor_id: string | null
           created_at: string
+          event_key: string
+          event_name: string
           id: string
           is_read: boolean
           message: string | null
@@ -847,7 +859,10 @@ export type Database = {
           type: Database["public"]["Enums"]["notification_type"]
         }
         Insert: {
+          actor_id?: string | null
           created_at?: string
+          event_key: string
+          event_name: string
           id?: string
           is_read?: boolean
           message?: string | null
@@ -858,7 +873,10 @@ export type Database = {
           type: Database["public"]["Enums"]["notification_type"]
         }
         Update: {
+          actor_id?: string | null
           created_at?: string
+          event_key?: string
+          event_name?: string
           id?: string
           is_read?: boolean
           message?: string | null
@@ -1574,26 +1592,6 @@ export type Database = {
           province: string | null
           store_name: string | null
         }
-        Insert: {
-          city?: string | null
-          delivery_available?: boolean | null
-          description?: string | null
-          id?: string | null
-          logo_url?: string | null
-          pickup_available?: boolean | null
-          province?: string | null
-          store_name?: string | null
-        }
-        Update: {
-          city?: string | null
-          delivery_available?: boolean | null
-          description?: string | null
-          id?: string | null
-          logo_url?: string | null
-          pickup_available?: boolean | null
-          province?: string | null
-          store_name?: string | null
-        }
         Relationships: []
       }
     }
@@ -1615,79 +1613,1061 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      admin_resolve_dispute: {
-        Args: { p_dispute_id: string; p_resolution: string }
+      admin_analytics_categories: {
+        Args: {
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+          p_start_date?: string
+        }
         Returns: {
-          assigned_admin_id: string | null
-          buyer_id: string
-          created_at: string
-          description: string | null
-          id: string
-          opened_by: string
-          order_id: string
-          reason: string
-          resolution: string | null
-          resolved_at: string | null
+          active_listings: number
+          category_id: string
+          category_name: string
+          gross_sales: number
+          total_count: number
+          units_sold: number
+        }[]
+      }
+      admin_analytics_overview: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          active_listings: number
+          active_sellers: number
+          active_users: number
+          approved_reviews: number
+          avg_order_value: number
+          avg_rating: number
+          cancelled_orders: number
+          completed_orders: number
+          conversion_rate: number
+          dismissed_reports: number
+          disputed_orders: number
+          favorites_count: number
+          gross_sales: number
+          inquiries_count: number
+          listing_views: number
+          net_sales: number
+          new_listings: number
+          new_sellers: number
+          new_users: number
+          open_disputes: number
+          open_reports: number
+          pending_sellers: number
+          products_sold: number
+          refund_count: number
+          refund_value: number
+          registered_users: number
+          resolved_disputes: number
+          resolved_reports: number
+          sold_listings: number
+          suspended_users: number
+          total_listings: number
+          total_sellers: number
+          transacted_orders: number
+          unique_viewers: number
+        }[]
+      }
+      admin_analytics_timeseries: {
+        Args: { p_bucket?: string; p_end_date?: string; p_start_date?: string }
+        Returns: {
+          approved_reviews: number
+          bucket_start: string
+          cancelled_orders: number
+          completed_orders: number
+          favorites_count: number
+          gross_sales: number
+          inquiries_count: number
+          listing_views: number
+          net_sales: number
+          new_listings: number
+          new_orders: number
+          new_sellers: number
+          new_users: number
+          products_sold: number
+          refund_value: number
+          transacted_orders: number
+        }[]
+      }
+      admin_analytics_top_listings: {
+        Args: {
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+          p_start_date?: string
+        }
+        Returns: {
+          avg_rating: number
+          category_name: string
+          favorites: number
+          gross_sales: number
+          inquiries: number
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          listing_title: string
+          review_count: number
+          store_name: string
+          total_count: number
+          units_sold: number
+          views: number
+        }[]
+      }
+      admin_analytics_top_sellers: {
+        Args: {
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+          p_start_date?: string
+        }
+        Returns: {
+          active_listings: number
+          avg_rating: number
+          completed_orders: number
+          gross_sales: number
+          review_count: number
           seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          total_count: number
+          transacted_orders: number
+          units_sold: number
+        }[]
+      }
+      admin_approve_seller: {
+        Args: { p_reason: string; p_seller_id: string }
+        Returns: {
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          user_id: string
+        }[]
+      }
+      admin_change_seller_status: {
+        Args: {
+          p_action_type: string
+          p_expected_status: Database["public"]["Enums"]["seller_status"]
+          p_new_status: Database["public"]["Enums"]["seller_status"]
+          p_reason: string
+          p_seller_id: string
+        }
+        Returns: {
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          user_id: string
+        }[]
+      }
+      admin_claim_dispute: {
+        Args: { p_dispute_id: string; p_reason: string }
+        Returns: {
+          assigned_admin_id: string
+          dispute_id: string
           status: Database["public"]["Enums"]["dispute_status"]
           updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "disputes"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        }[]
       }
-      admin_set_account_status: {
+      admin_create_brand: {
         Args: {
-          new_status: Database["public"]["Enums"]["account_status"]
-          target_user: string
+          p_description: string
+          p_logo_url: string
+          p_name: string
+          p_reason: string
+          p_slug: string
         }
-        Returns: undefined
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          slug: string
+          updated_at: string
+        }[]
       }
-      admin_set_role: {
+      admin_create_category: {
         Args: {
-          new_role: Database["public"]["Enums"]["user_role"]
-          target_user: string
+          p_description: string
+          p_name: string
+          p_reason: string
+          p_slug: string
+          p_sort_order: number
         }
-        Returns: undefined
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }[]
       }
-      admin_set_seller_status: {
+      admin_deactivate_brand: {
+        Args: { p_brand_id: string; p_reason: string }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_deactivate_category: {
+        Args: { p_category_id: string; p_reason: string }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_deactivate_user: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      admin_demote_admin: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      admin_get_admin_action: {
+        Args: { p_action_id: string }
+        Returns: {
+          action_id: string
+          action_type: string
+          admin_email: string
+          admin_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          new_data: Json
+          previous_data: Json
+          reason: string
+        }[]
+      }
+      admin_get_dispute: {
+        Args: { p_dispute_id: string }
+        Returns: {
+          assigned_admin_email: string
+          assigned_admin_id: string
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          created_at: string
+          description: string
+          dispute_id: string
+          evidence_count: number
+          message_count: number
+          opened_by: string
+          order_id: string
+          order_number: string
+          reason: string
+          refund_amount: number
+          refund_id: string
+          refund_status: Database["public"]["Enums"]["refund_status"]
+          resolution: string
+          resolved_at: string
+          seller_email: string
+          seller_id: string
+          seller_user_id: string
+          status: Database["public"]["Enums"]["dispute_status"]
+          store_name: string
+          updated_at: string
+        }[]
+      }
+      admin_get_listing: {
+        Args: { p_listing_id: string }
+        Returns: {
+          brand_id: string
+          brand_name: string
+          category_id: string
+          category_name: string
+          city: string
+          created_at: string
+          delivery_available: boolean
+          description: string
+          images: Json
+          listing_condition: Database["public"]["Enums"]["listing_condition"]
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          pickup_available: boolean
+          price: number
+          province: string
+          quantity: number
+          report_count: number
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      admin_get_listing_report: {
+        Args: { p_report_id: string }
+        Returns: {
+          assigned_admin_email: string
+          assigned_admin_id: string
+          created_at: string
+          description: string
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          listing_title: string
+          reason: string
+          report_id: string
+          resolution: string
+          resolved_at: string
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          status: Database["public"]["Enums"]["report_status"]
+          store_name: string
+          updated_at: string
+        }[]
+      }
+      admin_get_order: {
+        Args: { p_order_id: string }
+        Returns: {
+          address: string
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          cancelled_at: string
+          city: string
+          completed_at: string
+          confirmed_at: string
+          courier: string
+          created_at: string
+          delivery_notes: string
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          notes: string
+          order_id: string
+          order_items: Json
+          order_number: string
+          paid_at: string
+          payment_amount: number
+          payment_id: string
+          payment_method: string
+          payment_reference: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          phone: string
+          pickup_instructions: string
+          pickup_location: string
+          postal_code: string
+          preparing_at: string
+          proof_path: string
+          province: string
+          ready_for_pickup_at: string
+          recipient_name: string
+          rejection_reason: string
+          scheduled_date: string
+          seller_id: string
+          seller_user_id: string
+          shipped_at: string
+          status: Database["public"]["Enums"]["order_status"]
+          store_name: string
+          subtotal: number
+          total: number
+          tracking_number: string
+          updated_at: string
+        }[]
+      }
+      admin_get_refund: {
+        Args: { p_refund_id: string }
+        Returns: {
+          amount: number
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          completed_at: string
+          created_at: string
+          dispute_id: string
+          method: Database["public"]["Enums"]["refund_method"]
+          notes: string
+          order_id: string
+          order_number: string
+          payment_id: string
+          reason: string
+          reference: string
+          refund_id: string
+          requested_at: string
+          review_reason: string
+          reviewed_at: string
+          seller_id: string
+          seller_user_id: string
+          status: Database["public"]["Enums"]["refund_status"]
+          store_name: string
+          updated_at: string
+        }[]
+      }
+      admin_get_review: {
+        Args: { p_review_id: string }
+        Returns: {
+          comment: string
+          created_at: string
+          listing_id: string
+          listing_title: string
+          order_id: string
+          order_item_id: string
+          order_number: string
+          rating: number
+          review_id: string
+          reviewer_id: string
+          reviewer_name: string
+          seller_id: string
+          seller_rating: number
+          status: Database["public"]["Enums"]["review_status"]
+          store_name: string
+          updated_at: string
+        }[]
+      }
+      admin_get_seller: {
+        Args: { p_seller_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          active_listing_count: number
+          city: string
+          created_at: string
+          delivery_available: boolean
+          description: string
+          display_name: string
+          email: string
+          logo_url: string
+          pickup_available: boolean
+          pickup_instructions: string
+          pickup_location: string
+          province: string
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          total_listing_count: number
+          total_order_count: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      admin_get_user: {
+        Args: { p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          auth_created_at: string
+          avatar_url: string
+          city: string
+          display_name: string
+          email: string
+          first_name: string
+          last_name: string
+          last_sign_in_at: string
+          phone: string
+          profile_created_at: string
+          profile_updated_at: string
+          province: string
+          role: Database["public"]["Enums"]["user_role"]
+          seller_created_at: string
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          user_id: string
+        }[]
+      }
+      admin_list_admin_actions: {
         Args: {
-          new_status: Database["public"]["Enums"]["seller_status"]
-          seller: string
+          p_action_type?: string
+          p_admin_id?: string
+          p_entity_type?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
         }
-        Returns: undefined
+        Returns: {
+          action_id: string
+          action_type: string
+          admin_email: string
+          admin_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          new_data: Json
+          previous_data: Json
+          reason: string
+          total_count: number
+        }[]
+      }
+      admin_list_brands: {
+        Args: {
+          p_is_active?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          listing_count: number
+          logo_url: string
+          name: string
+          slug: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_categories: {
+        Args: {
+          p_is_active?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          listing_count: number
+          name: string
+          slug: string
+          sort_order: number
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_dispute_events: {
+        Args: {
+          p_dispute_id: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+        }
+        Returns: {
+          actor_id: string
+          created_at: string
+          details: Json
+          dispute_id: string
+          event_id: string
+          event_type: string
+          from_status: Database["public"]["Enums"]["dispute_status"]
+          to_status: Database["public"]["Enums"]["dispute_status"]
+          total_count: number
+        }[]
+      }
+      admin_list_dispute_evidence: {
+        Args: {
+          p_dispute_id: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+        }
+        Returns: {
+          created_at: string
+          dispute_id: string
+          evidence_id: string
+          legacy_url: string
+          mime_type: string
+          original_filename: string
+          size_bytes: number
+          storage_path: string
+          total_count: number
+          uploader_id: string
+          uploader_name: string
+        }[]
+      }
+      admin_list_dispute_messages: {
+        Args: {
+          p_dispute_id: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+        }
+        Returns: {
+          created_at: string
+          dispute_id: string
+          message: string
+          message_id: string
+          sender_id: string
+          sender_kind: string
+          sender_name: string
+          total_count: number
+        }[]
+      }
+      admin_list_disputes: {
+        Args: {
+          p_assigned_to_me?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["dispute_status"]
+        }
+        Returns: {
+          assigned_admin_email: string
+          assigned_admin_id: string
+          buyer_id: string
+          buyer_name: string
+          created_at: string
+          dispute_id: string
+          order_id: string
+          order_number: string
+          reason: string
+          refund_amount: number
+          refund_status: Database["public"]["Enums"]["refund_status"]
+          seller_id: string
+          status: Database["public"]["Enums"]["dispute_status"]
+          store_name: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_listing_reports: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["report_status"]
+        }
+        Returns: {
+          assigned_admin_id: string
+          created_at: string
+          description: string
+          listing_id: string
+          listing_title: string
+          reason: string
+          report_id: string
+          resolution: string
+          resolved_at: string
+          seller_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          store_name: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_listings: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_seller_id?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["listing_status"]
+        }
+        Returns: {
+          active_report_count: number
+          brand_name: string
+          category_name: string
+          created_at: string
+          listing_condition: Database["public"]["Enums"]["listing_condition"]
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          price: number
+          quantity: number
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          title: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_orders: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_payment_status?: Database["public"]["Enums"]["payment_status"]
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: {
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          created_at: string
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          order_id: string
+          order_number: string
+          payment_amount: number
+          payment_id: string
+          payment_method: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          seller_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          store_name: string
+          subtotal: number
+          total: number
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_refund_events: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_refund_id: string
+          p_sort?: string
+        }
+        Returns: {
+          actor_id: string
+          created_at: string
+          details: Json
+          event_id: string
+          event_type: string
+          from_status: Database["public"]["Enums"]["refund_status"]
+          refund_id: string
+          to_status: Database["public"]["Enums"]["refund_status"]
+          total_count: number
+        }[]
+      }
+      admin_list_refunds: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["refund_status"]
+        }
+        Returns: {
+          amount: number
+          buyer_id: string
+          buyer_name: string
+          completed_at: string
+          dispute_id: string
+          order_id: string
+          order_number: string
+          refund_id: string
+          requested_at: string
+          reviewed_at: string
+          seller_id: string
+          status: Database["public"]["Enums"]["refund_status"]
+          store_name: string
+          total_count: number
+        }[]
+      }
+      admin_list_reviews: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_rating?: number
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["review_status"]
+        }
+        Returns: {
+          comment: string
+          created_at: string
+          listing_id: string
+          listing_title: string
+          order_id: string
+          order_number: string
+          rating: number
+          review_id: string
+          reviewer_name: string
+          seller_id: string
+          seller_rating: number
+          status: Database["public"]["Enums"]["review_status"]
+          store_name: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      admin_list_sellers: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort?: string
+          p_status?: Database["public"]["Enums"]["seller_status"]
+        }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          city: string
+          created_at: string
+          display_name: string
+          email: string
+          listing_count: number
+          logo_url: string
+          order_count: number
+          province: string
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          store_name: string
+          total_count: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      admin_list_users: {
+        Args: {
+          p_account_status?: Database["public"]["Enums"]["account_status"]
+          p_page?: number
+          p_page_size?: number
+          p_role?: Database["public"]["Enums"]["user_role"]
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          auth_created_at: string
+          avatar_url: string
+          city: string
+          display_name: string
+          email: string
+          first_name: string
+          last_name: string
+          last_sign_in_at: string
+          profile_created_at: string
+          province: string
+          role: Database["public"]["Enums"]["user_role"]
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_moderate_listing: {
+        Args: { p_action: string; p_listing_id: string; p_reason: string }
+        Returns: {
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          updated_at: string
+        }[]
+      }
+      admin_moderate_review: {
+        Args: { p_action: string; p_reason: string; p_review_id: string }
+        Returns: {
+          review_id: string
+          status: Database["public"]["Enums"]["review_status"]
+          updated_at: string
+        }[]
+      }
+      admin_promote_user_to_admin: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      admin_reactivate_brand: {
+        Args: { p_brand_id: string; p_reason: string }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_reactivate_category: {
+        Args: { p_category_id: string; p_reason: string }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_reactivate_seller: {
+        Args: { p_reason: string; p_seller_id: string }
+        Returns: {
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          user_id: string
+        }[]
+      }
+      admin_reactivate_user: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      admin_reject_seller: {
+        Args: { p_reason: string; p_seller_id: string }
+        Returns: {
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          user_id: string
+        }[]
+      }
+      admin_resolve_dispute: {
+        Args: { p_dispute_id: string; p_reason: string; p_resolution: string }
+        Returns: {
+          assigned_admin_id: string
+          dispute_id: string
+          resolution: string
+          resolved_at: string
+          status: Database["public"]["Enums"]["dispute_status"]
+          updated_at: string
+        }[]
+      }
+      admin_set_brand_active: {
+        Args: {
+          p_action: string
+          p_brand_id: string
+          p_expected: boolean
+          p_new: boolean
+          p_reason: string
+        }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_set_category_active: {
+        Args: {
+          p_action: string
+          p_category_id: string
+          p_expected: boolean
+          p_new: boolean
+          p_reason: string
+        }
+        Returns: {
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_summary: {
+        Args: never
+        Returns: {
+          active_listings: number
+          active_refund_requests: number
+          active_sellers: number
+          active_users: number
+          approved_reviews: number
+          completed_orders: number
+          disputed_orders: number
+          disputes_under_review: number
+          hidden_reviews: number
+          open_disputes: number
+          open_orders: number
+          payments_awaiting_review: number
+          pending_reports: number
+          pending_sellers: number
+          removed_listings: number
+          reports_under_review: number
+          suspended_users: number
+          total_users: number
+        }[]
+      }
+      admin_suspend_seller: {
+        Args: { p_reason: string; p_seller_id: string }
+        Returns: {
+          seller_id: string
+          seller_status: Database["public"]["Enums"]["seller_status"]
+          user_id: string
+        }[]
+      }
+      admin_suspend_user: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      admin_update_brand: {
+        Args: {
+          p_brand_id: string
+          p_description: string
+          p_logo_url: string
+          p_name: string
+          p_reason: string
+          p_slug: string
+        }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      admin_update_category: {
+        Args: {
+          p_category_id: string
+          p_description: string
+          p_name: string
+          p_reason: string
+          p_slug: string
+          p_sort_order: number
+        }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }[]
       }
       admin_update_listing_report: {
         Args: {
+          p_reason: string
           p_report_id: string
           p_resolution?: string
           p_status: Database["public"]["Enums"]["report_status"]
         }
         Returns: {
-          assigned_admin_id: string | null
-          created_at: string
-          description: string | null
-          id: string
-          listing_id: string
-          reason: string
-          reporter_id: string | null
-          resolution: string | null
-          resolved_at: string | null
-          seller_id: string
+          assigned_admin_id: string
+          report_id: string
+          resolution: string
+          resolved_at: string
           status: Database["public"]["Enums"]["report_status"]
           updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "listing_reports"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        }[]
       }
+      analytics_require_admin: { Args: never; Returns: undefined }
+      analytics_require_bucket: {
+        Args: { p_bucket: string }
+        Returns: undefined
+      }
+      analytics_require_page: {
+        Args: { p_page: number; p_page_size: number }
+        Returns: undefined
+      }
+      analytics_require_seller: { Args: never; Returns: undefined }
+      analytics_require_sort: {
+        Args: { p_allowlist: string[]; p_sort: string }
+        Returns: undefined
+      }
+      analytics_require_window: {
+        Args: { p_end_date: string; p_max_days: number; p_start_date: string }
+        Returns: undefined
+      }
+      auth_active_seller_id: { Args: never; Returns: string }
       auth_seller_id: { Args: never; Returns: string }
+      can_manage_marketplace_product: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
       can_upload_dispute_evidence: {
         Args: { p_dispute_id: string }
         Returns: boolean
@@ -1897,6 +2877,20 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      emit_marketplace_notification: {
+        Args: {
+          p_actor_id?: string
+          p_event_key: string
+          p_event_name: string
+          p_message?: string
+          p_recipient_id: string
+          p_related_entity_id?: string
+          p_related_entity_type?: string
+          p_title: string
+          p_type: Database["public"]["Enums"]["notification_type"]
+        }
+        Returns: string
+      }
       escalate_dispute: {
         Args: { p_dispute_id: string; p_reason?: string }
         Returns: {
@@ -1955,6 +2949,7 @@ export type Database = {
           seller_rating: number
         }[]
       }
+      is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_dispute_participant: {
         Args: { p_dispute_id: string }
@@ -1987,6 +2982,7 @@ export type Database = {
           seller_rating: number
         }[]
       }
+      mark_all_notifications_read: { Args: never; Returns: number }
       mark_cash_received: {
         Args: { p_payment_id: string }
         Returns: {
@@ -2008,6 +3004,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: boolean
       }
       mark_order_ready_for_pickup: {
         Args: { p_order_id: string }
@@ -2102,6 +3102,75 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_seller_analytics_listings: {
+        Args: {
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_sort?: string
+          p_start_date?: string
+        }
+        Returns: {
+          avg_rating: number
+          favorites: number
+          gross_sales: number
+          inquiries: number
+          listing_id: string
+          listing_status: Database["public"]["Enums"]["listing_status"]
+          listing_title: string
+          review_count: number
+          total_count: number
+          units_sold: number
+          views: number
+        }[]
+      }
+      my_seller_analytics_overview: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          active_listings: number
+          approved_reviews: number
+          avg_order_value: number
+          avg_rating: number
+          cancelled_orders: number
+          completed_orders: number
+          disputed_orders: number
+          draft_listings: number
+          favorites_count: number
+          gross_sales: number
+          inquiries_count: number
+          listing_views: number
+          net_sales: number
+          new_listings: number
+          open_disputes: number
+          products_sold: number
+          refund_count: number
+          refund_value: number
+          resolved_disputes: number
+          sold_listings: number
+          total_listings: number
+          transacted_orders: number
+          unique_viewers: number
+        }[]
+      }
+      my_seller_analytics_timeseries: {
+        Args: { p_bucket?: string; p_end_date?: string; p_start_date?: string }
+        Returns: {
+          approved_reviews: number
+          bucket_start: string
+          cancelled_orders: number
+          completed_orders: number
+          favorites_count: number
+          gross_sales: number
+          inquiries_count: number
+          listing_views: number
+          net_sales: number
+          new_listings: number
+          new_orders: number
+          products_sold: number
+          refund_value: number
+          transacted_orders: number
+        }[]
+      }
       notify_user: {
         Args: {
           p_message: string
@@ -2138,6 +3207,17 @@ export type Database = {
         }
       }
       payment_is_open: { Args: { p_order_id: string }; Returns: boolean }
+      record_admin_action: {
+        Args: {
+          p_action_type: string
+          p_entity_id: string
+          p_entity_type: string
+          p_new_data: Json
+          p_previous_data: Json
+          p_reason: string
+        }
+        Returns: string
+      }
       register_dispute_evidence: {
         Args: {
           p_dispute_id: string

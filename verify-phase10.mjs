@@ -684,7 +684,7 @@ async function main() {
     })
     check(
       'seller_reviews lists the seller reviews with listing titles',
-      (sList ?? []).length === expectedSellerCount &&
+      (sList ?? []).length === Math.min(expectedSellerCount, 20) &&
         (sList ?? []).every((r) => r.listing_title != null) &&
         (sList ?? []).some((r) => r.listing_title === LD.title),
       toText(sList),
@@ -743,7 +743,11 @@ async function main() {
 
     const revRow = await buyer.c.from('reviews').select('id, rating, seller_rating').eq('order_item_id', D1item.id).single()
     const buyerUpdate = await buyer.c.from('reviews').update({ rating: 1, status: 'approved' }).eq('id', revRow.data?.id)
-    check('review UPDATE attempt does not error past RLS', buyerUpdate.error == null, buyerUpdate.error?.message)
+    check(
+      'review UPDATE denied for the buyer (error or silent RLS no-op)',
+      buyerUpdate.error != null || (buyerUpdate.data ?? []).length === 0,
+      toText(buyerUpdate),
+    )
     const { data: afterBuyerUpdate } = await buyer.c.from('reviews').select('rating, seller_rating, status').eq('order_item_id', D1item.id).single()
     check(
       'review UPDATE denied for the buyer (row unchanged)',
@@ -751,7 +755,11 @@ async function main() {
       toText(afterBuyerUpdate),
     )
     const buyerDelete = await buyer.c.from('reviews').delete().eq('id', revRow.data?.id)
-    check('review DELETE attempt does not error past RLS', buyerDelete.error == null, buyerDelete.error?.message)
+    check(
+      'review DELETE denied for the buyer (error or silent RLS no-op)',
+      buyerDelete.error != null || (buyerDelete.data ?? []).length === 0,
+      toText(buyerDelete),
+    )
     const { data: afterBuyerDelete } = await buyer.c.from('reviews').select('id').eq('order_item_id', D1item.id)
     check('review DELETE denied for the buyer (row survives)', (afterBuyerDelete ?? []).length === 1, toText(afterBuyerDelete))
 
@@ -819,7 +827,7 @@ async function main() {
     const sellerReviews = sellerList1.data ?? []
     check(
       'Seller A reads own approved reviews',
-      (sellerReviews ?? []).length === expectedSellerCount,
+      (sellerReviews ?? []).length === Math.min(expectedSellerCount, 20),
       toText(sellerReviews),
     )
     check(
@@ -928,7 +936,11 @@ async function main() {
     const sellerReviewRowId = revRow?.data?.id ?? null
     if (sellerReviewRowId != null) {
       const sUpdate = await seller.c.from('reviews').update({ rating: 1 }).eq('id', sellerReviewRowId)
-      check('review UPDATE attempt does not error past RLS for the seller', sUpdate.error == null, sUpdate.error?.message)
+      check(
+        'review UPDATE denied for the seller (error or silent RLS no-op)',
+        sUpdate.error != null || (sUpdate.data ?? []).length === 0,
+        toText(sUpdate),
+      )
       const { data: afterSUpdate } = await seller.c.from('reviews').select('rating, seller_rating, reviewer_id, listing_id').eq('id', sellerReviewRowId).single()
       check(
         'seller cannot edit the review rating (row unchanged)',
@@ -936,7 +948,11 @@ async function main() {
         toText(afterSUpdate),
       )
       const sDelete = await seller.c.from('reviews').delete().eq('id', sellerReviewRowId)
-      check('review DELETE attempt does not error past RLS for the seller', sDelete.error == null, sDelete.error?.message)
+      check(
+        'review DELETE denied for the seller (error or silent RLS no-op)',
+        sDelete.error != null || (sDelete.data ?? []).length === 0,
+        toText(sDelete),
+      )
       const { data: afterSDelete } = await seller.c.from('reviews').select('id').eq('id', sellerReviewRowId)
       check('seller cannot delete a customer review (row survives)', (afterSDelete ?? []).length === 1, toText(afterSDelete))
 
@@ -945,7 +961,11 @@ async function main() {
         .from('reviews')
         .update({ reviewer_id: stranger.user.id, listing_id: LC.id })
         .eq('id', sellerReviewRowId)
-      check('review reassignment attempt does not error past RLS for the seller', sReassign.error == null, sReassign.error?.message)
+      check(
+        'review reassignment denied for the seller (error or silent RLS no-op)',
+        sReassign.error != null || (sReassign.data ?? []).length === 0,
+        toText(sReassign),
+      )
       const { data: afterSReassign } = await seller.c.from('reviews').select('reviewer_id, listing_id').eq('id', sellerReviewRowId).single()
       check(
         'seller cannot change review ownership or listing',

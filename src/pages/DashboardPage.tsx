@@ -56,8 +56,7 @@ export default function DashboardPage() {
         {displayName ? `Welcome, ${displayName}` : 'Welcome'}
       </h1>
       <p className="page__intro">
-        Your account is active. The marketplace is under construction — browsing,
-        selling, and buying features arrive in upcoming phases.
+        Manage your marketplace activity, preferences, purchases, and seller tools.
       </p>
       <nav className="dashboard-links" aria-label="Account">
         <Link className="dashboard-links__item" to="/profile">
@@ -84,12 +83,16 @@ export default function DashboardPage() {
           <strong>Disputes</strong>
           <span>Track problems reported for your orders</span>
         </Link>
+        <Link className="dashboard-links__item" to="/notifications">
+          <strong>Notifications</strong>
+          <span>Review order, inquiry, review, dispute, and account updates</span>
+        </Link>
         {sellerTools}
         {hasRole(profile ?? null, 'admin') ? (
-          <div className="dashboard-links__item dashboard-links__item--disabled">
+          <Link className="dashboard-links__item" to="/admin">
             <strong>Admin tools</strong>
-            <span>Available in a future phase</span>
-          </div>
+            <span>Open the marketplace administration workspace</span>
+          </Link>
         ) : null}
       </nav>
     </div>

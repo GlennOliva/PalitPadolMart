@@ -471,6 +471,7 @@ export default function SellerListingFormPage() {
               <section className="seller-form__section glass glass--soft">
                 <h2 className="seller-form__section-title">Paddle details</h2>
                 <fieldset className="seller-form__toggles">
+                <legend className="visually-hidden">Paddle attributes</legend>
                 <div className="form-grid">
                   <FormField
                     id="paddle-weight"

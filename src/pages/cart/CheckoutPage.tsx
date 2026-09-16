@@ -303,8 +303,8 @@ export default function CheckoutPage() {
             </SubmitButton>
             {submitError != null ? <Alert variant="error" message={submitError} /> : null}
             <p className="checkout__summary-note">
-              No fees are added yet. Payment and fulfillment details arrive in a
-              later phase.
+              No platform fees are added. Payment is settled with the seller at
+              pickup, at delivery, or via manual transfer.
             </p>
           </GlassPanel>
         </aside>

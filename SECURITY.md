@@ -23,7 +23,9 @@ RLS is enabled on every table. Highlights:
   `public_seller_profiles` definer views that select only public columns.
 - **Listings**: guests read only `active` listings; sellers manage their own;
   admins see all. Column grants block changing `seller_id`.
-- **Favorites / recommendation profiles / notifications**: owner-only.
+- **Favorites / recommendation profiles / notifications**: owner-only reads.
+  Notification creation and direct mutation are revoked; recipient-scoped
+  mark-read RPCs are the only browser write path.
 - **Inquiries / messages, orders / items, payments, fulfillment**:
   participants (buyer, seller) plus admins; unrelated users see nothing.
 - **seller_payment_methods**: self-service — the owning seller can manage
@@ -65,8 +67,8 @@ RLS is enabled on every table. Highlights:
   under their own exact `{auth.uid()}/{dispute_id}/{generated_uuid}.{ext}` path.
   Registered evidence is immutable.
 - **Admin/audit tables**: admin-only (`is_admin()` policy).
-- **listing_views / notifications / payments / order_items**: no client write
-  policies; written server-side in later phases.
+- **listing_views / notifications / payments / order_items**: no direct client
+  write policies; trusted RPCs/triggers own writes where implemented.
 
 ## Admin authorization model
 
@@ -92,7 +94,7 @@ with the caller's own privileges — there is no elevated path. RLS on
 restrict to `listing_status = 'active'` and `quantity > 0`, so anonymous
 callers can only ever see published, in-stock inventory.
 
-## Authentication flows (Phase 2)
+## Authentication flows (Phases 2 and 12)
 
 - Session state is owned by `AuthProvider` (`src/features/auth/`); guests are
   kept out of account routes by `ProtectedRoute`, signed-in users are kept out
@@ -108,6 +110,14 @@ callers can only ever see published, in-stock inventory.
 - Password recovery uses `resetPasswordForEmail` with a `redirectTo` of the
   app's `/reset-password` route; the recovery flag is cleared after a
   successful password change.
+- Google sign-in starts only through Supabase Auth. `/auth/callback` accepts
+  only safe internal `next` paths, maps provider failures to safe copy, and
+  never receives or stores the Google client secret.
+- `handle_new_user()` provisions password and OAuth users with the same
+  server-side trigger. Provider names are bounded before storage; role and
+  account status are fixed to `customer`/`active`, never accepted from metadata.
+- An authenticated callback with an unavailable profile shows a retry state;
+  the browser cannot self-insert a replacement profile.
 
 ## Storage security
 
@@ -176,6 +186,24 @@ are the only mutation boundary.
   immutable events and changes payment to `refunded` without changing order
   status, total, stock, or order items.
 
+## Notification authorization (Phase 12)
+
+- Notification recipients, actors, event identity, related entities, and safe
+  display copy derive from trusted marketplace rows in private trigger
+  functions. Browsers cannot forge a notification.
+- `(recipient_id, event_key)` is unique, so duplicate/replayed business
+  transitions cannot create duplicate deliveries for the same recipient.
+- Authenticated users select only `recipient_id = auth.uid()` rows. Anonymous
+  and unrelated users receive no rows through RLS or Realtime.
+- Direct table INSERT/UPDATE/DELETE and execution of
+  `emit_marketplace_notification(...)`, `notify_user(...)`, and all trigger
+  functions are revoked from browser roles.
+- `mark_notification_read(uuid)` includes the caller recipient predicate and
+  returns `false` for a foreign/unknown id. `mark_all_notifications_read()`
+  affects only the caller and returns the exact updated count.
+- Reports notify active admins but not the reported seller. Participant events
+  exclude the actor and use buyer/seller-specific destinations.
+
 ## Secret handling
 
 - Only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are used in browser
@@ -191,9 +219,12 @@ are the only mutation boundary.
 - Phase 11 includes secure admin report/dispute RPCs, but their dashboard UI and
   review **moderation** remain deferred to Phase 13. Refunds are manually
   recorded; there is no payment-gateway transfer or automatic stock restoration.
-- Auth email delivery and Supabase Auth dashboard settings (Site URL, Redirect
-  URLs, email confirmation) must be verified manually against the live
-  project. Live data-integrity passes now exist for Phases 5–11
-  (`verify-phase7.mjs`, `verify-phase8.mjs`, `verify-phase9.mjs`,
-  `verify-phase10.mjs`, `verify-phase11.mjs`) and each covered RLS workflow has
-  been exercised per role. Phase 11 manual browser acceptance is still pending.
+- Auth email delivery, Supabase Auth URLs, Google consent/callback/account
+  linking, and production SPA routing must be verified manually. Live
+  data-integrity passes now exist for Phases 5-14
+  (`verify-phase7.mjs` through `verify-phase14.mjs`). Positive admin checks in
+  Phases 12-14 explicitly skip without configured/valid admin test credentials
+  (`PHASE12_TEST_ADMIN_*`, `PHASE13_TEST_ADMIN_*` / `PHASE14_TEST_ADMIN_*`);
+  the Phase 14 seller-side analytics checks are all-pass. See
+  `PHASE12_VERIFICATION.md` and `PHASE14_VERIFICATION.md` for the exact
+  boundaries.

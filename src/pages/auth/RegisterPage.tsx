@@ -16,6 +16,7 @@ import {
   validatePassword,
   validatePasswordConfirm,
 } from '../../features/auth/validation'
+import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton'
 
 interface RegisterForm {
   firstName: string
@@ -104,6 +105,14 @@ export default function RegisterPage() {
         title="Create your account"
         subtitle="Join PalitPaddleBai Mart to buy and sell pickleball equipment."
       >
+        <GoogleOAuthButton
+          returnPath={location.state?.from}
+          disabled={submitting}
+          onError={setSubmitError}
+        />
+        <div className="auth-divider" role="separator">
+          <span>or create an account with email</span>
+        </div>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <FormField
             id="register-first-name"

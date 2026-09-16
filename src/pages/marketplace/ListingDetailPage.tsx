@@ -270,9 +270,14 @@ export default function ListingDetailPage() {
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
                   aria-invalid={fieldErrors.message != null ? true : undefined}
+                  aria-describedby={
+                    fieldErrors.message != null ? 'inquiry-message-error' : undefined
+                  }
                 />
                 {fieldErrors.message != null ? (
-                  <p className="form-field__error">{fieldErrors.message}</p>
+                  <p id="inquiry-message-error" className="form-field__error">
+                    {fieldErrors.message}
+                  </p>
                 ) : null}
               </div>
               {submitError != null ? <Alert variant="error" message={submitError} /> : null}

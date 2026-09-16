@@ -212,7 +212,7 @@ export default function RecommendationsPage() {
       ) : (
         <div className="rec-results">
           {saveError != null ? (
-            <Alert variant="info" message={saveError} />
+            <Alert variant="error" message={saveError} />
           ) : !isAuthenticated ? (
             <Alert
               variant="info"

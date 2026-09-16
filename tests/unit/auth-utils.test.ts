@@ -17,6 +17,7 @@ describe('isSafeInternalPath', () => {
   it('accepts internal absolute paths', () => {
     expect(isSafeInternalPath('/dashboard')).toBe(true)
     expect(isSafeInternalPath('/profile/2')).toBe(true)
+    expect(isSafeInternalPath('/marketplace?q=paddle#results')).toBe(true)
   })
 
   it('rejects non-absolute and protocol-relative paths', () => {
@@ -27,6 +28,9 @@ describe('isSafeInternalPath', () => {
   it('rejects scheme and backslash smuggling', () => {
     expect(isSafeInternalPath('/https://evil.example')).toBe(false)
     expect(isSafeInternalPath('/\\evil.example')).toBe(false)
+    expect(isSafeInternalPath('/%5cevil.example')).toBe(false)
+    expect(isSafeInternalPath('/%2fevil.example')).toBe(false)
+    expect(isSafeInternalPath('/dashboard\n')).toBe(false)
   })
 })
 
@@ -45,10 +49,18 @@ describe('resolveReturnPath', () => {
 
   it('accepts a safe pathname object like router state.from', () => {
     expect(resolveReturnPath({ pathname: '/profile' })).toBe('/profile')
+    expect(resolveReturnPath({ pathname: '/marketplace', search: '?q=paddle', hash: '#results' }))
+      .toBe('/marketplace?q=paddle#results')
   })
 
   it('rejects an unsafe pathname object', () => {
     expect(resolveReturnPath({ pathname: '//evil.example' })).toBe('/dashboard')
+  })
+
+  it('rejects auth entry loops', () => {
+    expect(resolveReturnPath('/login')).toBe('/dashboard')
+    expect(resolveReturnPath('/auth/callback?next=/profile')).toBe('/dashboard')
+    expect(resolveReturnPath('/register#form')).toBe('/dashboard')
   })
 })
 

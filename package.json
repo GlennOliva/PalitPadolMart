@@ -13,11 +13,21 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:phase11": "playwright test tests/e2e/phase11",
+    "test:e2e:phase12": "playwright test tests/e2e/phase12",
+    "test:e2e:phase13": "playwright test tests/e2e/phase13",
+    "test:e2e:phase14": "playwright test tests/e2e/phase14",
+    "test:e2e:phase15": "playwright test tests/e2e/phase15",
     "verify:phase11": "npm run test && node verify-phase11.mjs && npm run test:e2e:phase11 && npm run lint && npm run typecheck && npm run build",
+    "verify:phase12": "npm run lint && npm run typecheck && npm run test && node verify-phase12.mjs && npm run test:e2e:phase12 && npm run build",
+    "verify:phase13": "npm run lint && npm run typecheck && npm run test && node verify-phase13.mjs && npm run test:e2e:phase13 && npm run build",
+    "verify:phase14": "npm run lint && npm run typecheck && npm run test && node verify-phase14.mjs && npm run test:e2e:phase14 && npm run build",
+    "verify:phase15": "npm run lint && npm run typecheck && npm run test && node verify-phase15.mjs && npm run test:e2e:phase15 && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",
+    "@tanstack/charts": "^0.18.0",
+    "@tanstack/react-charts": "^0.18.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"

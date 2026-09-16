@@ -33,7 +33,7 @@ function QuantitySelect({
       <select
         className="form-field__input form-field__input--sm"
         value={item.quantity}
-        disabled={busy}
+        disabled={busy || max < 1}
         onChange={(event) => onChange(Number(event.target.value))}
       >
         {Array.from({ length: max }, (_, index) => index + 1).map((value) => (

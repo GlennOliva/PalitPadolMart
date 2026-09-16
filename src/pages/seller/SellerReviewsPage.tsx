@@ -132,7 +132,11 @@ export default function SellerReviewsPage() {
           </section>
 
           {/* Filters */}
-          <div className="seller-reviews-filters" aria-label="Filter and sort reviews">
+          <div
+            className="seller-reviews-filters"
+            role="group"
+            aria-label="Filter and sort reviews"
+          >
             <div className="seller-reviews-filters__group">
               <label htmlFor="seller-review-rating-filter" className="seller-reviews-filters__label">
                 Filter

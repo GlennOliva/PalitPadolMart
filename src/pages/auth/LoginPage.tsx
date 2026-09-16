@@ -10,6 +10,7 @@ import { signInWithPassword } from '../../features/auth/auth.service'
 import { mapAuthError } from '../../features/auth/auth-errors'
 import { resolveReturnPath } from '../../features/auth/auth-utils'
 import { validateEmail, validatePassword } from '../../features/auth/validation'
+import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -63,6 +64,14 @@ export default function LoginPage() {
         title="Sign in"
         subtitle="Welcome back to PalitPaddleBai Mart."
       >
+        <GoogleOAuthButton
+          returnPath={location.state?.from}
+          disabled={submitting}
+          onError={setSubmitError}
+        />
+        <div className="auth-divider" role="separator">
+          <span>or continue with email</span>
+        </div>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <FormField
             id="login-email"

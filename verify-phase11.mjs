@@ -291,6 +291,7 @@ async function main() {
       await runRpc(buyer.c, 'admin_update_listing_report', {
         p_report_id: reportId,
         p_status: 'resolved',
+        p_reason: 'forged report resolution',
         p_resolution: 'forged',
       }),
       'FORBIDDEN',
@@ -392,6 +393,7 @@ async function main() {
       await runRpc(seller.c, 'admin_resolve_dispute', {
         p_dispute_id: disputeId,
         p_resolution: 'forged',
+        p_reason: 'forged dispute resolution',
       }),
       'FORBIDDEN',
     )

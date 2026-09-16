@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
 import ProtectedRoute from '../components/auth/ProtectedRoute'
@@ -17,6 +18,19 @@ import FavoritesPage from '../pages/account/FavoritesPage'
 import InquiriesPage from '../pages/account/InquiriesPage'
 import InquiryDetailPage from '../pages/account/InquiryDetailPage'
 import ApplicationErrorPage from '../components/common/ApplicationErrorPage'
+import LoadingState from '../components/common/LoadingState'
+import OAuthCallbackPage from '../pages/auth/OAuthCallbackPage'
+import AdminRoute from '../components/admin/AdminRoute'
+import AdminLayout from '../components/admin/AdminLayout'
+
+const AdminPaymentsPage = lazy(() => import('../pages/admin/AdminPaymentsPage'))
+const AdminDisputesPage = lazy(() => import('../pages/admin/AdminDisputesPage'))
+const AdminRefundsPage = lazy(() => import('../pages/admin/AdminRefundsPage'))
+const AdminAuditLogsPage = lazy(() => import('../pages/admin/AdminAuditLogsPage'))
+const AdminCategoriesPage = lazy(() => import('../pages/admin/AdminCategoriesPage'))
+const AdminBrandsPage = lazy(() => import('../pages/admin/AdminBrandsPage'))
+
+const adminRouteFallback = <LoadingState label="Loading administration view…" />
 
 export const router = createBrowserRouter([
   {
@@ -51,6 +65,7 @@ export const router = createBrowserRouter([
           { path: 'orders/:orderId/review/:orderItemId', lazy: async () => ({ Component: (await import('../pages/orders/ReviewItemPage')).default }) },
           { path: 'disputes', lazy: async () => ({ Component: (await import('../pages/disputes/BuyerDisputesPage')).default }) },
           { path: 'disputes/:disputeId', lazy: async () => ({ Component: (await import('../pages/disputes/BuyerDisputeDetailPage')).default }) },
+          { path: 'notifications', lazy: async () => ({ Component: (await import('../pages/account/NotificationsPage')).default }) },
           { path: 'seller/onboarding', lazy: async () => ({ Component: (await import('../pages/seller/SellerOnboardingPage')).default }) },
           { path: 'seller/status', lazy: async () => ({ Component: (await import('../pages/seller/SellerStatusPage')).default }) },
           {
@@ -68,8 +83,40 @@ export const router = createBrowserRouter([
               { path: 'listings/:listingId', lazy: async () => ({ Component: (await import('../pages/seller/SellerListingDetailPage')).default }) },
               { path: 'listings/:listingId/edit', lazy: async () => ({ Component: (await import('../pages/seller/SellerListingFormPage')).default }) },
               { path: 'reviews', lazy: async () => ({ Component: (await import('../pages/seller/SellerReviewsPage')).default }) },
+              { path: 'analytics', lazy: async () => ({ Component: (await import('../pages/seller/SellerAnalyticsPage')).default }) },
               { path: 'disputes', lazy: async () => ({ Component: (await import('../pages/disputes/SellerDisputesPage')).default }) },
               { path: 'disputes/:disputeId', lazy: async () => ({ Component: (await import('../pages/disputes/SellerDisputeDetailPage')).default }) },
+            ],
+          },
+          {
+            path: 'admin',
+            element: <AdminRoute />,
+            children: [
+              {
+                element: <AdminLayout />,
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({
+                      Component: (await import('../pages/admin/AdminDashboardPage')).default,
+                    }),
+                  },
+                  { path: 'users', lazy: async () => ({ Component: (await import('../pages/admin/AdminUsersPage')).default }) },
+                  { path: 'sellers', lazy: async () => ({ Component: (await import('../pages/admin/AdminSellersPage')).default }) },
+                  { path: 'listings', lazy: async () => ({ Component: (await import('../pages/admin/AdminListingsPage')).default }) },
+                  { path: 'reports', lazy: async () => ({ Component: (await import('../pages/admin/AdminReportsPage')).default }) },
+                  { path: 'reviews', lazy: async () => ({ Component: (await import('../pages/admin/AdminReviewsPage')).default }) },
+                  { path: 'orders', lazy: async () => ({ Component: (await import('../pages/admin/AdminOrdersPage')).default }) },
+                  { path: 'payments', element: <Suspense fallback={adminRouteFallback}><AdminPaymentsPage /></Suspense> },
+                  { path: 'disputes', element: <Suspense fallback={adminRouteFallback}><AdminDisputesPage /></Suspense> },
+                  { path: 'refunds', element: <Suspense fallback={adminRouteFallback}><AdminRefundsPage /></Suspense> },
+                  { path: 'audit-logs', element: <Suspense fallback={adminRouteFallback}><AdminAuditLogsPage /></Suspense> },
+                  { path: 'analytics', lazy: async () => ({ Component: (await import('../pages/admin/AdminAnalyticsPage')).default }) },
+                  { path: 'report-center', lazy: async () => ({ Component: (await import('../pages/admin/AdminReportCenterPage')).default }) },
+                  { path: 'categories', element: <Suspense fallback={adminRouteFallback}><AdminCategoriesPage /></Suspense> },
+                  { path: 'brands', element: <Suspense fallback={adminRouteFallback}><AdminBrandsPage /></Suspense> },
+                ],
+              },
             ],
           },
         ],
@@ -79,6 +126,7 @@ export const router = createBrowserRouter([
       { path: 'recommendations', lazy: async () => ({ Component: (await import('../pages/recommendations/RecommendationsPage')).default }) },
       { path: 'sellers/:sellerId', lazy: async () => ({ Component: (await import('../pages/seller/PublicSellerProfilePage')).default }) },
       { path: 'reset-password', element: <ResetPasswordPage /> },
+      { path: 'auth/callback', element: <OAuthCallbackPage /> },
       { path: 'account-suspended', element: <AccountSuspendedPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

@@ -34,6 +34,12 @@ vi.mock('../../src/lib/supabase/client', () => ({
   },
 }))
 
+/**
+ * The Phase 10 summary RPCs are `returns table` functions, so PostgREST always
+ * returns a one-row JSON ARRAY (e.g. `[{ review_count: 3, average_rating: 4.33 }]`).
+ * The mocks below mirror that wire shape so the service regression tests prove
+ * the real "No reviews yet despite 3 reviews" bug stays fixed.
+ */
 const rawReview = {
   id: 'rev-1',
   rating: 4,
@@ -47,7 +53,7 @@ const rawReview = {
   listing_image_url: null,
 }
 
-const rawSummary = { review_count: 3, average_rating: 4.33 }
+const rawSummaryRows = [{ review_count: 3, average_rating: 4.33 }]
 
 import { makePostgrestError } from '../utils/seller'
 
@@ -177,20 +183,44 @@ describe('submitReview', () => {
 })
 
 describe('review summaries', () => {
-  it('normalizes the listing aggregate', async () => {
-    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummary, error: null })
+  it('normalizes the listing aggregate from the real table-returning wire shape', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummaryRows, error: null })
     const { data, error } = await getListingReviewSummary('list-1')
     expect(error).toBeNull()
     expect(data).toEqual({ reviewCount: 3, averageRating: 4.33 })
     expect(reviewMocks.rpc).toHaveBeenCalledWith('listing_review_summary', { p_listing_id: 'list-1' })
   })
 
-  it('normalizes the seller aggregate', async () => {
-    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummary, error: null })
+  it('normalizes the seller aggregate from the table-returning wire shape', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummaryRows, error: null })
     const { data, error } = await getSellerReviewSummary('seller-1')
     expect(error).toBeNull()
     expect(data).toEqual({ reviewCount: 3, averageRating: 4.33 })
     expect(reviewMocks.rpc).toHaveBeenCalledWith('seller_review_summary', { p_seller_id: 'seller-1' })
+  })
+
+  it('keeps tolerating a bare single-row object response', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummaryRows[0], error: null })
+    const { data, error } = await getSellerReviewSummary('seller-1')
+    expect(error).toBeNull()
+    expect(data).toEqual({ reviewCount: 3, averageRating: 4.33 })
+  })
+
+  it('returns null (not a fake zero) when the summary RPC returns zero rows', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [], error: null })
+    const { data, error } = await getListingReviewSummary('list-1')
+    expect(error).toBeNull()
+    expect(data).toBeNull()
+  })
+
+  it('surfaces an RPC failure instead of pretending there are zero reviews', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({
+      data: null,
+      error: makePostgrestError('FORBIDDEN: no access', '42501'),
+    })
+    const { data, error } = await getSellerReviewSummary('seller-1')
+    expect(data).toBeNull()
+    expect(error?.code).toBe('FORBIDDEN')
   })
 
   it('normalizes the listing distribution', async () => {
@@ -307,12 +337,19 @@ describe('seller-side review RPCs (auth-derived)', () => {
     expect(data?.hasMore).toBe(true)
   })
 
-  it('getMySellerRatingSummary calls the RPC with no params', async () => {
-    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummary, error: null })
+  it('getMySellerRatingSummary normalizes the table-returning wire shape', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: rawSummaryRows, error: null })
     const { data, error } = await getMySellerRatingSummary()
     expect(error).toBeNull()
     expect(data).toEqual({ reviewCount: 3, averageRating: 4.33 })
     expect(reviewMocks.rpc).toHaveBeenCalledWith('get_my_seller_rating_summary', {})
+  })
+
+  it('getMySellerRatingSummary returns null for a zero-row summary (truly no reviews)', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [], error: null })
+    const { data, error } = await getMySellerRatingSummary()
+    expect(error).toBeNull()
+    expect(data).toBeNull()
   })
 
   it('getMySellerRatingDistribution calls the RPC with no params', async () => {
@@ -327,5 +364,64 @@ describe('seller-side review RPCs (auth-derived)', () => {
     expect(error).toBeNull()
     expect(data).toEqual({ 5: 2, 4: 1 })
     expect(reviewMocks.rpc).toHaveBeenCalledWith('get_my_seller_rating_distribution', {})
+  })
+})
+
+describe('CUSTOMER REVIEWS SUMMARY BUG REGRESSION — "No reviews yet" despite existing reviews', () => {
+  it('BUG: 3 qualifying seller reviews are counted (not 0) because the wire shape is an array', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [{ review_count: 3, average_rating: 4.7 }], error: null })
+    const { data, error } = await getMySellerRatingSummary()
+    expect(error).toBeNull()
+    expect(data?.reviewCount).toBe(3)
+    expect(data?.reviewCount).not.toBe(0)
+  })
+
+  it('BUG: ratings 5, 4, 5 produce an average of approximately 4.67', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [{ review_count: 3, average_rating: 4.6666666667 }], error: null })
+    const { data } = await getMySellerRatingSummary()
+    expect(data?.reviewCount).toBe(3)
+    expect((data?.averageRating ?? 0)).toBeGreaterThan(4.6)
+    expect((data?.averageRating ?? 0)).toBeLessThan(4.7)
+  })
+
+  it('BUG: the distribution total matches the qualifying review count', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({
+      data: [
+        { rating_value: 5, review_count: 2 },
+        { rating_value: 4, review_count: 1 },
+      ],
+      error: null,
+    })
+    const distribution = await getMySellerRatingDistribution()
+    const total = Object.values(distribution.data ?? {}).reduce((sum, n) => sum + n, 0)
+    expect(total).toBe(3)
+    expect(distribution.data).toEqual({ 5: 2, 4: 1 })
+  })
+
+  it('BUG: a failed summary RPC is an error, never proof of zero reviews', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({
+      data: null,
+      error: makePostgrestError('UNKNOWN: upstream failure', 'P0001'),
+    })
+    const { data, error } = await getMySellerRatingSummary()
+    expect(data).toBeNull()
+    expect(error?.code).toBe('UNKNOWN')
+  })
+
+  it('BUG: seller review counts stay isolated across sellers', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [{ review_count: 3, average_rating: 4.7 }], error: null })
+    const sellerA = await getMySellerRatingSummary()
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [{ review_count: 1, average_rating: 5 }], error: null })
+    const sellerB = await getMySellerRatingSummary()
+    expect(sellerA.data?.reviewCount).toBe(3)
+    expect(sellerB.data?.reviewCount).toBe(1)
+    expect(sellerB.data?.reviewCount).not.toBe(3)
+  })
+
+  it('BUG: the summary count is the trusted total, not the current page length', async () => {
+    reviewMocks.rpc.mockResolvedValueOnce({ data: [{ review_count: 20, average_rating: 4.6 }], error: null })
+    const { data } = await getMySellerRatingSummary()
+    expect(data?.reviewCount).toBe(20)
+    expect(data?.reviewCount).not.toBe(10)
   })
 })

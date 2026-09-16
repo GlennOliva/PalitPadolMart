@@ -8,6 +8,7 @@ import { signInWithPassword } from '../../src/features/auth/auth.service'
 
 vi.mock('../../src/features/auth/auth.service', () => ({
   signInWithPassword: vi.fn(),
+  signInWithGoogle: vi.fn(),
 }))
 
 const mockedSignIn = vi.mocked(signInWithPassword)
@@ -49,6 +50,7 @@ function fillForm(email: string, password: string) {
 describe('LoginPage', () => {
   it('shows validation errors when fields are empty', () => {
     renderLogin()
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Sign in/i }))
 
     expect(screen.getByText('Email is required.')).toBeInTheDocument()
@@ -113,5 +115,58 @@ describe('LoginPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Sign in/i })).toBeEnabled(),
     )
+  })
+
+  describe('Password visibility toggle', () => {
+    it('renders password as hidden initially', () => {
+      renderLogin()
+      const input = screen.getByLabelText(/^Password/)
+      expect(input).toHaveAttribute('type', 'password')
+    })
+
+    it('shows password when the eye button is clicked', () => {
+      renderLogin()
+      const input = screen.getByLabelText(/^Password/)
+      expect(input).toHaveAttribute('type', 'password')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+      expect(input).toHaveAttribute('type', 'text')
+    })
+
+    it('hides password when the eye button is clicked again', () => {
+      renderLogin()
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+      expect(screen.getByLabelText(/^Password/)).toHaveAttribute('type', 'text')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+      expect(screen.getByLabelText(/^Password/)).toHaveAttribute('type', 'password')
+    })
+
+    it('preserves the password value through visibility toggles', () => {
+      renderLogin()
+      const input = screen.getByLabelText(/^Password/)
+      fireEvent.change(input, { target: { value: 'MyPassword123!' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+      expect(input).toHaveValue('MyPassword123!')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+      expect(input).toHaveValue('MyPassword123!')
+    })
+
+it('does not submit the form when the toggle is clicked', async () => {
+    mockedSignIn.mockClear()
+    mockedSignIn.mockResolvedValue({
+      data: { user: null, session: null },
+      error: authError('invalid_credentials', 'Invalid login credentials'),
+    } as unknown as AuthTokenResponsePassword)
+    renderLogin()
+
+      fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: 'secret' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+
+      expect(mockedSignIn).not.toHaveBeenCalled()
+      expect(screen.queryByText(/Invalid email or password/)).not.toBeInTheDocument()
+    })
   })
 })

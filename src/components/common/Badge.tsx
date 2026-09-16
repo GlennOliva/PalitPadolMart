@@ -26,6 +26,10 @@ export type BadgeVariant =
   | 'resolved'
   | 'closed'
   | 'approved'
+  | 'deactivated'
+  | 'hidden'
+  | 'dismissed'
+  | 'admin'
   | 'neutral'
 
 interface BadgeProps {

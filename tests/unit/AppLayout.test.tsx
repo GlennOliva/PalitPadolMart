@@ -7,20 +7,42 @@ import type { SellerContextValue } from '../../src/features/seller/SellerProvide
 import { createSellerValue, makeSellerProfile, renderWithSeller } from '../utils/seller'
 import { createAuthValue, makeProfile, makeUser, renderWithAuth } from '../utils/auth'
 import { createCartValue, renderWithCart } from '../utils/cart'
+import { createNotificationsValue, renderWithNotifications } from '../utils/notifications'
+import AdminLayout from '../../src/components/admin/AdminLayout'
 
-function renderLayout(value: AuthContextValue, sellerValue: SellerContextValue) {
+function renderLayout(
+  value: AuthContextValue,
+  sellerValue: SellerContextValue,
+  initialEntry = '/',
+) {
   const router = createMemoryRouter(
     [
       {
         path: '/',
         element: <AppLayout />,
-        children: [{ index: true, element: <div>HOME PAGE</div> }],
+        children: [
+          { index: true, element: <div>HOME PAGE</div> },
+          {
+            path: 'admin',
+            element: <AdminLayout />,
+            children: [{ index: true, element: <div>ADMIN PAGE</div> }],
+          },
+        ],
       },
     ],
-    { initialEntries: ['/'] },
+    { initialEntries: [initialEntry] },
   )
   return render(
-    renderWithAuth(renderWithSeller(renderWithCart(<RouterProvider router={router} />, createCartValue()), sellerValue), value),
+    renderWithAuth(
+      renderWithSeller(
+        renderWithCart(
+          renderWithNotifications(<RouterProvider router={router} />, createNotificationsValue()),
+          createCartValue(),
+        ),
+        sellerValue,
+      ),
+      value,
+    ),
   )
 }
 
@@ -59,6 +81,39 @@ describe('AppLayout', () => {
     expect(screen.getByRole('link', { name: /Preferences/i })).toBeInTheDocument()
     expect(screen.getByText('Ace Player')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Sign in/i })).not.toBeInTheDocument()
+  })
+
+  it('shows one Administration entry only to admins', () => {
+    const admin = createAuthValue({
+      status: 'authenticated',
+      isAuthenticated: true,
+      user: makeUser(),
+      profile: makeProfile({}, 'admin'),
+    })
+    const { unmount } = renderLayout(admin, createSellerValue())
+
+    expect(screen.getAllByRole('link', { name: 'Administration' })).toHaveLength(1)
+    expect(screen.getByRole('link', { name: 'Administration' })).toHaveAttribute('href', '/admin')
+    unmount()
+
+    renderLayout(signedIn(), createSellerValue())
+    expect(screen.queryByRole('link', { name: 'Administration' })).not.toBeInTheDocument()
+  })
+
+  it('keeps Dashboard and Administration link names unique inside the admin shell', () => {
+    renderLayout(
+      createAuthValue({
+        status: 'authenticated',
+        isAuthenticated: true,
+        user: makeUser(),
+        profile: makeProfile({}, 'admin'),
+      }),
+      createSellerValue(),
+      '/admin',
+    )
+
+    expect(screen.getAllByRole('link', { name: 'Dashboard' })).toHaveLength(1)
+    expect(screen.getAllByRole('link', { name: 'Administration' })).toHaveLength(1)
   })
 
   it('calls signOut when the user clicks Log out', () => {

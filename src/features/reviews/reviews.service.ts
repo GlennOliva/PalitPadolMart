@@ -87,6 +87,28 @@ async function runReviewRpc(
   }
 }
 
+/**
+ * The Phase 10 summary RPCs (`listing_review_summary`, `seller_review_summary`,
+ * `get_my_seller_rating_summary`) are declared with `returns table`, so
+ * PostgREST returns a one-row JSON array (for example
+ * `[{ review_count: 3, average_rating: 4.67 }]`). This reads the first row and
+ * tolerates a bare single-row object for robustness, normalizing to `null`
+ * when no row exists.
+ *
+ * Treating the array as a row object is the historical "No reviews yet" bug:
+ * `row.review_count` was always `undefined`, so every summary collapsed to
+ * count 0 / average null even when approved reviews existed.
+ */
+interface ReviewSummaryRow {
+  review_count?: number | null
+  average_rating?: number | null
+}
+
+function readReviewSummaryRow(data: unknown): ReviewSummaryRow | null {
+  const first = Array.isArray(data) ? data[0] : data
+  return first == null ? null : (first as ReviewSummaryRow)
+}
+
 function toReviewRecord(data: unknown): ReviewRecord | null {
   const row = data as {
     id?: string
@@ -156,7 +178,7 @@ export async function getListingReviewSummary(
     p_listing_id: listingId,
   })
   if (error != null) return { data: null, error }
-  const row = data as { review_count?: number; average_rating?: number | null } | null
+  const row = readReviewSummaryRow(data)
   return {
     data:
       row == null ? null : { reviewCount: row.review_count ?? 0, averageRating: row.average_rating ?? null },
@@ -172,7 +194,7 @@ export async function getSellerReviewSummary(
     p_seller_id: sellerId,
   })
   if (error != null) return { data: null, error }
-  const row = data as { review_count?: number; average_rating?: number | null } | null
+  const row = readReviewSummaryRow(data)
   return {
     data:
       row == null ? null : { reviewCount: row.review_count ?? 0, averageRating: row.average_rating ?? null },
@@ -338,7 +360,7 @@ export async function getMySellerRatingSummary(): Promise<{
 }> {
   const { data, error } = await runReviewRpc('get_my_seller_rating_summary', {})
   if (error != null) return { data: null, error }
-  const row = data as { review_count?: number; average_rating?: number | null } | null
+  const row = readReviewSummaryRow(data)
   return {
     data:
       row == null

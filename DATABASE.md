@@ -14,7 +14,7 @@ All money is stored as `numeric(12,2)` (no floating point). All timestamps are
 - Migrations live in `supabase/migrations/<timestamp>_<name>.sql`, applied in
   filename order by `supabase db push` (remote) / `supabase db reset` (local).
 - The Supabase CLI is available and linked to the hosted "PalitPaddleBai"
-  project (ref `mygnxlhimbrmjwtrffbh`); tracked migrations through Phase 11
+  project (ref `mygnxlhimbrmjwtrffbh`); tracked migrations through Phase 14
   have been applied remotely.
 - Regenerate client types with
   `supabase gen types typescript --linked > src/types/database.ts`. The
@@ -127,7 +127,11 @@ All money is stored as `numeric(12,2)` (no floating point). All timestamps are
   actor, old/new status, timestamp, and details.
 
 ### Notifications / administration
-- `notifications` — per-recipient, typed, read state; server-written.
+- `notifications` - durable per-recipient deliveries with `event_name`, unique
+  recipient-scoped `event_key`, optional trusted actor/related entity, type,
+  display copy, read state, and creation time. Private trigger functions write
+  rows from committed marketplace changes; browser roles can only select their
+  own rows and use controlled one-way read RPCs.
 - `admin_actions`, `audit_logs` — admin audit trail; admin-read only.
 
 ## Functions and triggers
@@ -225,6 +229,62 @@ fields from `auth.uid()` and trusted rows:
 
 See `DISPUTES_AND_REFUNDS.md` and `PHASE11_VERIFICATION.md`.
 
+### Phase 12 notification RPCs and triggers
+
+- `emit_marketplace_notification(...)` is the private, pinned-search-path write
+  boundary. It validates metadata and deduplicates on
+  `(recipient_id, event_key)`; browser execution is revoked.
+- `notify_user(...)` remains only as a private compatibility boundary for the
+  earlier order RPCs and derives role-specific targets from persisted orders.
+- `mark_notification_read(uuid)` marks one caller-owned unread row and returns
+  a non-disclosing boolean. `mark_all_notifications_read()` marks all of the
+  caller's unread rows and returns the affected count.
+- Trigger functions emit inquiry, payment, fulfillment, review, report,
+  dispute/refund, and seller-status notifications from trusted rows. Their
+  execution is revoked from `anon` and `authenticated`.
+- `handle_new_user()` accepts bounded Google provider name metadata as well as
+  password-registration metadata and always provisions a new application user
+  as an active `customer`; existing rows are not overwritten.
+- `notifications` belongs to the Supabase Realtime publication when that
+  publication exists. RLS still limits delivered rows to the recipient.
+
+See `NOTIFICATIONS.md` and `PHASE12_VERIFICATION.md`.
+
+### Phase 14 analytics RPCs
+
+All are `security definer` with `search_path` pinned; admin RPCs call
+`analytics_require_admin()` and seller RPCs derive the seller exclusively from
+`auth_seller_id()` (`FORBIDDEN` when null). Structured
+`CODE: message` exceptions are raised and mapped by `mapAdminError` /
+`mapAnalyticsError`:
+
+- `admin_analytics_overview`, `admin_analytics_timeseries`,
+  `admin_analytics_categories`, `admin_analytics_top_listings`,
+  `admin_analytics_top_sellers` — marketplace reporting. Overview returns a
+  single aggregate row; timeseries zero-fills buckets; rankings are paginated
+  and sortable. Admin-only (browser roles and anonymous are denied).
+- `my_seller_analytics_overview`, `my_seller_analytics_timeseries`,
+  `my_seller_analytics_listings` — seller reporting scoped to the caller's own
+  seller profile. Listing ranking is seller-isolated; non-sellers are denied.
+- Validation helpers: `analytics_require_window` (null/reversed range →
+  `INVALID_DATE_RANGE`; day span > 92, week > 546, month/overview/rankings >
+  2190 → `INVALID_DATE_RANGE`), `analytics_require_bucket` (`INVALID_BUCKET`),
+  `analytics_require_sort` (`INVALID_SORT`), `analytics_require_page`
+  (page 1..100000, page_size 1..100 → `INVALID_PAGINATION`), plus
+  `analytics_require_admin` / `analytics_require_seller` (`AUTH_REQUIRED` /
+  `FORBIDDEN`).
+- Signed-in role is required for all analytics; grants are `authenticated`
+  only.
+- Supporting indexes (`idx_listing_views_listing_viewed`,
+  `idx_favorites_listing_created`, `idx_inquiries_{listing,seller}_created`,
+  `idx_orders_seller_created`) are created in the analytics migration; none
+  duplicate existing indexes.
+
+Migrations: `20260915000000_phase14_analytics.sql` and
+`20260915010000_phase14_seller_timeseries_fix.sql` (corrected `o.units` →
+`p.units` in `my_seller_analytics_timeseries`). See `ANALYTICS.md` and
+`PHASE14_VERIFICATION.md`.
+
 `seller_payment_methods` is self-service via PostgREST (upsert on
 `seller_id`+`method`, column grants restrict which columns the seller may
 write); visibility for buyers is restricted by RLS to enabled methods of
@@ -243,7 +303,7 @@ active sellers.
 
 Foreign keys and hot query paths are indexed: listing status/category/brand/
 condition/price/created_at, seller/order statuses, payment status, inquiry
-participants, notification recipient+read, dispute status, and analytics
+participants, notification recipient+created/read ordering, dispute status, and analytics
 (event/view) ordering. See `20260809000000_create_marketplace_schema.sql` for
 the full list.
 
@@ -259,9 +319,11 @@ Created in `20260809000001_create_storage_foundation.sql` and
 
 ## Known limitation
 
-Migrations have been applied to the hosted project and types generated; Phases
-7, 8, 9, and 10 have live security passes (`verify-phase7.mjs`,
-`verify-phase8.mjs`, `verify-phase9.mjs`, `verify-phase10.mjs`) that exercise
-each RPC and RLS policy per role — see the phase verification docs. Phase 9/10
-completed orders and their retained listings are intentionally kept (no client
-delete path exists for confirmed/completed transactions).
+Migrations have been applied to the hosted project and types generated. Hosted
+verifiers through Phase 14 pass against browser-safe anon-key clients; two
+positive Phase 12 admin notification checks explicitly skip when
+`PHASE12_TEST_ADMIN_*` is absent, and Phase 13/14 admin-positive checks skip on
+the currently-invalid `PHASE13_TEST_ADMIN_*` / `PHASE14_TEST_ADMIN_*`
+credential. Phase 9-12 completed transactions and their
+related immutable history are intentionally retained where no participant
+hard-delete path exists.
