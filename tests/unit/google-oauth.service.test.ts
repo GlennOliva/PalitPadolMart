@@ -18,7 +18,7 @@ describe('signInWithGoogle', () => {
     expect(signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
       options: {
-        redirectTo: 'http://localhost:3000/auth/callback?next=%2Forders%2Forder-1%3Ftab%3Dpayment%23proof',
+        redirectTo: 'https://palit-padol-mart.vercel.app/auth/callback?next=%2Forders%2Forder-1%3Ftab%3Dpayment%23proof',
         scopes: 'openid email profile',
       },
     })
