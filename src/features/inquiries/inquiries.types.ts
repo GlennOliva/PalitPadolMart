@@ -4,6 +4,7 @@ export type InquiryStatus = Database['public']['Enums']['inquiry_status']
 
 export type Inquiry = Tables<'inquiries'>
 export type InquiryMessage = Tables<'inquiry_messages'>
+export type InquiryMessageAttachment = Tables<'inquiry_message_attachments'>
 
 /**
  * An inquiry row with joined display data. The seller embed comes from the
@@ -33,4 +34,22 @@ export interface InquiryInput {
   seller_id: string
   subject: string
   message: string
+}
+
+/**
+ * A selected-but-unsent image in the composer. `previewUrl` is a temporary
+ * object URL that must be revoked once the attachment is sent or removed.
+ */
+export interface PendingInquiryImage {
+  id: string
+  file: File
+  previewUrl: string
+}
+
+/** Trusted metadata sent to send_inquiry_reply for one attachment. */
+export interface InquiryAttachmentInput {
+  storage_path: string
+  file_name: string | null
+  mime_type: string
+  file_size: number
 }

@@ -7,6 +7,7 @@ const { detailMocks, user } = vi.hoisted(() => ({
   detailMocks: {
     getInquiry: vi.fn(),
     getInquiryMessages: vi.fn(),
+    getInquiryAttachments: vi.fn(),
     markInquiryRead: vi.fn(),
     sendInquiryReply: vi.fn(),
     closeInquiry: vi.fn(),
@@ -24,6 +25,14 @@ vi.mock('../../src/features/inquiries/inquiries.service', () => ({
   markInquiryRead: detailMocks.markInquiryRead,
   sendInquiryReply: detailMocks.sendInquiryReply,
   closeInquiry: detailMocks.closeInquiry,
+}))
+
+vi.mock('../../src/features/inquiries/inquiry-attachments.service', () => ({
+  getInquiryAttachments: detailMocks.getInquiryAttachments,
+  uploadInquiryImage: vi.fn(),
+  removeInquiryUploads: vi.fn(),
+  createInquiryImageFilename: vi.fn(),
+  validateInquiryImageFiles: vi.fn(),
 }))
 
 function inquiry(overrides: Record<string, unknown> = {}) {
@@ -69,6 +78,7 @@ function renderPage() {
 function stubOpenThread() {
   detailMocks.getInquiry.mockResolvedValue({ data: inquiry(), error: null })
   detailMocks.getInquiryMessages.mockResolvedValue({ data: [message()], error: null })
+  detailMocks.getInquiryAttachments.mockResolvedValue({ data: [], error: null })
   detailMocks.markInquiryRead.mockResolvedValue({ data: null, error: null })
 }
 
@@ -107,7 +117,7 @@ describe('InquiryDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
 
     await waitFor(() => {
-      expect(detailMocks.sendInquiryReply).toHaveBeenCalledWith('inq-1', 'Great, it is yours!')
+      expect(detailMocks.sendInquiryReply).toHaveBeenCalledWith('inq-1', 'Great, it is yours!', [])
     })
     expect(await screen.findByText('Great, it is yours!')).toBeInTheDocument()
   })
@@ -121,7 +131,7 @@ describe('InquiryDetailPage', () => {
     fireEvent.change(textarea, { target: { value: '   ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
 
-    expect(screen.getByText('Message is required.')).toBeInTheDocument()
+    expect(screen.getByText('Type a message or attach an image.')).toBeInTheDocument()
     expect(detailMocks.sendInquiryReply).not.toHaveBeenCalled()
   })
 

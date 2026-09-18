@@ -47,3 +47,22 @@ export function validateInquiryMessage(message: string): string | null {
   }
   return null
 }
+
+/**
+ * Validates a thread reply that may be image-only: at least one of message
+ * text or an attached image must exist, and any provided text stays within the
+ * 2000-character bound enforced by the DB CHECK.
+ */
+export function validateInquiryMessageWithAttachments(
+  message: string,
+  attachmentCount: number,
+): string | null {
+  const trimmed = message.trim()
+  if (trimmed.length === 0 && attachmentCount === 0) {
+    return 'Type a message or attach an image.'
+  }
+  if (trimmed.length > MAX_INQUIRY_MESSAGE_LENGTH) {
+    return `Message must be ${MAX_INQUIRY_MESSAGE_LENGTH} characters or fewer.`
+  }
+  return null
+}

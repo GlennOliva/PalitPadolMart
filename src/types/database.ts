@@ -588,6 +588,57 @@ export type Database = {
           },
         ]
       }
+      inquiry_message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_size: number
+          id: string
+          inquiry_id: string
+          message_id: string
+          mime_type: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_size: number
+          id?: string
+          inquiry_id: string
+          message_id: string
+          mime_type: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_size?: number
+          id?: string
+          inquiry_id?: string
+          message_id?: string
+          mime_type?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiry_message_attachments_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "inquiries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiry_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "inquiry_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiry_messages: {
         Row: {
           created_at: string
@@ -2949,6 +3000,10 @@ export type Database = {
           seller_rating: number
         }[]
       }
+      inquiry_attachment_object_attached: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_dispute_participant: {
@@ -3370,7 +3425,7 @@ export type Database = {
         }
       }
       send_inquiry_reply: {
-        Args: { p_inquiry_id: string; p_message: string }
+        Args: { p_attachments?: Json; p_inquiry_id: string; p_message: string }
         Returns: {
           created_at: string
           id: string
@@ -3516,6 +3571,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      user_is_inquiry_participant: {
+        Args: { p_inquiry_id: string }
+        Returns: boolean
       }
     }
     Enums: {

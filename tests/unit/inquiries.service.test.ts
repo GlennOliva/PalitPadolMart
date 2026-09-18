@@ -367,6 +367,7 @@ describe('sendInquiryReply', () => {
     expect(inquiriesMocks.rpc).toHaveBeenCalledWith('send_inquiry_reply', {
       p_inquiry_id: 'inq-1',
       p_message: 'Yes it is!',
+      p_attachments: [],
     })
   })
 
@@ -389,6 +390,7 @@ describe('sendInquiryReply', () => {
     expect(inquiriesMocks.rpc).toHaveBeenCalledWith('send_inquiry_reply', {
       p_inquiry_id: 'inq-1',
       p_message: 'not my business',
+      p_attachments: [],
     })
   })
 

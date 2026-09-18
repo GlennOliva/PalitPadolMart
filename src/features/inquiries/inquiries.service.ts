@@ -1,6 +1,13 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase/client'
-import type { Inquiry, InquiryInput, InquiryListItem, InquiryMessage } from './inquiries.types'
+import type { Json } from '../../types/database'
+import type {
+  Inquiry,
+  InquiryAttachmentInput,
+  InquiryInput,
+  InquiryListItem,
+  InquiryMessage,
+} from './inquiries.types'
 
 const INQUIRY_DISPLAY_COLUMNS = `
   id,
@@ -202,16 +209,20 @@ export async function startInquiry(
 
 /**
  * Sends a reply through the atomic send_inquiry_reply RPC: it validates
- * participation and open/answered state, writes the message, and flips the
- * inquiry status (seller → answered, buyer → open) in one step.
+ * participation and open/answered state, writes the message (and any image
+ * attachments), and flips the inquiry status (seller → answered, buyer → open)
+ * in one step. Text-only messages pass an empty attachment list, preserving the
+ * original behavior.
  */
 export async function sendInquiryReply(
   inquiryId: string,
   message: string,
+  attachments: InquiryAttachmentInput[] = [],
 ): Promise<{ data: InquiryMessage | null; error: PostgrestError | null }> {
   const { data, error } = await supabase.rpc('send_inquiry_reply', {
     p_inquiry_id: inquiryId,
     p_message: message,
+    p_attachments: attachments as unknown as Json,
   })
   return { data: (data ?? null) as InquiryMessage | null, error }
 }
